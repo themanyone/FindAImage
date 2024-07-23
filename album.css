@@ -1,0 +1,22 @@
+  img{
+    height:300px;
+  }
+  figure{
+    width:350px;
+    display:inline-block;
+    white-space: nowrap;
+  }
+  figcaption {
+    position: absolute;
+    width: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #181818;
+  }
+  figure:hover{
+    white-space: normal;
+  }
+  body{
+    background-color: #181818;
+    color: #e0e0e0;
+  }
