@@ -81,7 +81,7 @@ If that works, we can create a database in the form of a web page of the whole d
 
 ```bash
 shopt -s nullglob
-printf -- "--image %q " *.gif *.png *.webp *.webm *.jpg *.jpeg | llava_phi3.sh -p "Write a one paragraph caption for the image."  --template '<figure><img src="[image]" alt="[image]"><figcaption>[description]</figcaption></figure>' --log-disable | tee data
+printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a caption for the image." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
 ```
 
 The `printf` `--` option tells printf not to interpret everything as options. The `%q` outputs file names with spaces and special characters properly escaped. We could have used `find` for this. The `nullglob` option to `shopt` is necessary to prevent bash from causing errors if no images are found matching [pattern]. Bash tries to pass off the glob pattern itself as one of the images. So we turn that feature off. 
