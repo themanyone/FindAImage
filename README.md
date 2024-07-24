@@ -90,7 +90,7 @@ printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write 
 
 The `printf` `--` option tells printf not to interpret everything as options. The `%q` outputs file names with spaces and special characters properly escaped. We could have used `find` for this. The `nullglob` option to `shopt` is necessary to prevent bash from causing errors if no images are found matching [pattern]. Bash tries to pass off the glob pattern itself as one of the images. So we turn that feature off. 
 
-For more information: `pinfo bash --node "The Shopt Builtin"`.
+You can even recurse subdirectories with `printf`, if you enable globstar `shopt -s globstar`. For more information: `pinfo bash --node "The Shopt Builtin"`.
 
 ## Analyze image data
 
