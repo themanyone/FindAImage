@@ -81,7 +81,7 @@ llava_phi3.sh --image file.jpg
 
 ## Gather image data
 
-If that works, we can create a database in the form of a web page of the whole directory. While technically not a database, it allows visual and text searching, plus copy and paste access to mags.
+If that works, we can create a database in the form of a web page of the whole directory. While technically not a database, it allows visual and text searching, plus copy and paste access to photographs.
 
 ```bash
 shopt -s nullglob
@@ -192,7 +192,7 @@ Launch the album in the default web browser.
 
 `xdg-open album.html`
 
-Search for text captions in the browser by pressing `CTRL+F`. It will scroll to the image in question. Right click on images to copy them. You could also publish the album on a web server, [github pages](https://pages.github.com/), or [google drive](https://dev.to/matinmollapur0101/how-to-use-google-drive-to-host-your-website-1oen).
+Search for text captions in the browser by pressing `CTRL+F`. It will scroll to the image in question. Right click on your mug shots to copy them, paste them to social media, etc. You could also publish the album on a web server, [github pages](https://pages.github.com/), or [google drive](https://dev.to/matinmollapur0101/how-to-use-google-drive-to-host-your-website-1oen). Or good old-fashioned `lftp` to your server box.
 
 ## Closing thoughts
 
