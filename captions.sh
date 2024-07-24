@@ -1,1 +1,1 @@
-printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a caption for the image." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
+printf -- "--image %q " *.png *.gif *.webp *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a caption for the image." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data

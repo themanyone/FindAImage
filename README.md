@@ -1,8 +1,12 @@
 # FindAImage
 
-AI photo finder and orgznizer for Linux, Windows, Android, etc.
+Using AI image descriptions to organize memes.
 
-Generate captions for images, searchable in your favorite browser.
+Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
+
+Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
+
+What was needed was a way to display images with captions that could be easily searched by typing a few words. And the best way to do that is using a browser.
 
 ![preview](preview.png)
 
@@ -77,7 +81,7 @@ llava_phi3.sh --image file.jpg
 
 ## Gather image data
 
-If that works, we can create a database in the form of a web page of the whole directory. While technically not a database, it allows visual and text searching, plus copy and paste access to imags.
+If that works, we can create a database in the form of a web page of the whole directory. While technically not a database, it allows visual and text searching, plus copy and paste access to mags.
 
 ```bash
 shopt -s nullglob
@@ -141,7 +145,7 @@ We could manually clean this up to make a proper HTML page. But tools like HTML 
 ...
 ```
 
-We now have a nice web page of photos with AI-generated captions. Feel free to make correctios. Let's add some CSS to make the photo album look better. Insert `<link rel="stylesheet" href="album.css">` somewhere between the <head> and </head> tags.
+We now have a nice web page of photos with AI-generated captions. Feel free to make corrections. Let's add some CSS to make the photo album look better. Insert `<link rel="stylesheet" href="album.css">` somewhere between the <head> and </head> tags.
 
 ```
 <!DOCTYPE html>
