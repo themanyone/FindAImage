@@ -6,7 +6,10 @@ Who doesn't have a folder of their favorite memes? But it becomes tedious scroll
 
 Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
 
-What was needed was a way to display images with captions that could be easily searched by typing a few words. And the best way to do that is using a browser.
+What was needed was a way to display images with captions that could be easily searched by typing a few words. And the simplest and fastest way to do that is using a browser. We also wanted it to be
+ * offline and private. No sending images to remote servers.
+ * back-end development. Publish as a website, if you want.
+ * a simple utility. No cumbersome apps. Lauch album in browser.
 
 ![preview](preview.png)
 
@@ -208,19 +211,25 @@ cat << EOF > album.css
 EOF
 ```
 
-Launch the album in the default web browser. 
+## Launch the album
+
+Rename the album to something creative. Launch the album in the default web browser. 
 
 `xdg-open album.html`
 
+Create a link to your album on the desktop. While viewing the album, simply drag the link in the address bar to the desktop. Or create a simlink from the command line.
+
+`ln -s album.html ~/Desktop/`
+
 Search for text captions in the browser by pressing `CTRL+F`. It will scroll to the image in question. Right click on your mug shots to copy them, paste them to social media, etc. You could also publish the album on a web server, [github pages](https://pages.github.com/), or [google drive](https://dev.to/matinmollapur0101/how-to-use-google-drive-to-host-your-website-1oen). Or good old-fashioned `lftp` to your server box.
 
-## Advanced usage
+## Advanced search
 
-Some javascript has been added to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
+There is some javascript to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
 
 ## Closing thoughts
 
-Well, that's it. We built `llama.cpp`, downloaded a llava model, made some scripts, and built a static web page with AI-generated image captions. What else could we be doing with the help of AI?
+Well, that's it. We built `llama.cpp`, downloaded a llava model, made some scripts, and built a photo album. We made a searchable web page, with AI-generated image captions. And we created a shortcut on the Desktop. What else could we be doing with the help of AI?
 
 ## Discuss
 
