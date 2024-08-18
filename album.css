@@ -1,7 +1,7 @@
-  img{
+  img {
     height:300px;
   }
-  figure{
+  figure {
     width:350px;
     display:inline-block;
     white-space: nowrap;
@@ -16,7 +16,27 @@
   figure:hover{
     white-space: normal;
   }
-  body{
+  body {
     background-color: #181818;
     color: #e0e0e0;
   }
+  header {
+    width: 100%;
+    background-color: #101010;
+  }
+  header div * {
+    -webkit-border-radius: 5px;
+    font: normal 24px/normal Arial, Helvetica, sans-serif;
+  }
+  header div {
+    margin: 0 auto;
+    width: 33%;
+  }
+#search + svg {
+  margin-left: -30px;
+  margin-bottom: -2px;
+  visibility: hidden;
+}
+#search:placeholder-shown + svg {
+  visibility: visible;
+}

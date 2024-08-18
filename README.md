@@ -21,18 +21,20 @@ Or, if it's already downloaded, `git pull`.
 
 ## Install dependencies
 
+Install at least tidy. If you need documentation, consider also installing `pinfo`.
+
 Fedora, Centos.
-`dnf install tidy`
+`dnf install tidy pinfo`
 
 Ubuntu, Debian.
-`dpkg -i tidy`
+`dpkg -i tidy pinfo`
 
 Arch
-`pacman -S tidy`
+`pacman -S tidy pinfo`
 
 ## Install [llama.cpp](https://github.com/themanyone/llama.cpp.git)
 
-For this project, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe in the future we can update this page to use the official version.
+For this project, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
 
 ```bash
 git clone https://github.com/themanyone/llama.cpp.git
@@ -85,12 +87,30 @@ If that works, we can create a database in the form of a web page of the whole d
 
 ```bash
 shopt -s nullglob
-printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a caption for the image." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
+printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a quick, 10-50 word caption for this image. Just one caption. Minimum 10 words." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
 ```
 
 The `printf` `--` option tells printf not to interpret everything as options. The `%q` outputs file names with spaces and special characters properly escaped. We could have used `find` for this. The `nullglob` option to `shopt` is necessary to prevent bash from causing errors if no images are found matching [pattern]. Bash tries to pass off the glob pattern itself as one of the images. So we turn that feature off. 
 
-You can even recurse subdirectories with `printf`, if you enable globstar `shopt -s globstar`. For more information: `pinfo bash --node "The Shopt Builtin"`.
+You can even recurse subdirectories with `printf`, if you enable globstar `shopt -s globstar`. For more information (FYI): `pinfo bash --node "The Shopt Builtin"`.
+
+### Update from .csv
+
+Someday you might want to update the captions, working with a subset of images in a comma-separated, quoted `.csv` file. This is made possible by reading the data into an array. FYI: `pinfo bash --node "Arrays"`
+
+`IFS="," read -r -a a <<< "files.csv"`
+
+Or if you have `xsel` installed. You can work with .csv data copied to the clipboard with `CTRL-C`.
+
+`IFS="," read -r -a a <<< "$(xsel -b)"`
+
+The `IFS` file seperator tells Bash the file is comma-separated. FYI: `pinfo bash --node "Word Splitting"`
+
+```
+echo "${a[@]}"|xargs printf -- "--image %q " | xargs llava_phi3.sh -p "Write a quick, 10-50 word caption for this image. Just one caption. Minimum 10 words." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
+```
+
+The `echo "${a[@]}"` echos the file names properly quoted. FYI: pinfo bash --node "Quoting". We use `xargs` repeatedly to keep file name arguments quoted as they pass through the pipeline.
 
 ## Analyze image data
 
@@ -115,7 +135,7 @@ template we provided. We now have a data file that looks like this.
 
 ## Build a web page automatically
 
-We could manually clean this up to make a proper HTML page. But tools like HTML tidy already exist for that. This command builds `album.html` from `data`.
+We could manually clean this `data` up to make a proper HTML page. But tools like HTML tidy already exist for that. This command builds `album.html` from `data`.
 
 `tidy -i -o album.html data`
 
@@ -159,7 +179,7 @@ We now have a nice web page of photos with AI-generated captions. Feel free to m
 ...
 ```
 
-And create the css file.
+And create a basic css file.
 
 ```
 cat << EOF > album.css
@@ -193,6 +213,10 @@ Launch the album in the default web browser.
 `xdg-open album.html`
 
 Search for text captions in the browser by pressing `CTRL+F`. It will scroll to the image in question. Right click on your mug shots to copy them, paste them to social media, etc. You could also publish the album on a web server, [github pages](https://pages.github.com/), or [google drive](https://dev.to/matinmollapur0101/how-to-use-google-drive-to-host-your-website-1oen). Or good old-fashioned `lftp` to your server box.
+
+## Advanced usage
+
+Some javascript has been added to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
 
 ## Closing thoughts
 
