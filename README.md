@@ -6,12 +6,10 @@ Who doesn't have a folder of their favorite memes? But it becomes tedious scroll
 
 ![preview](preview.png)
 
-Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't (yet, we're working on that) searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
-
-What was needed was a way to display images with captions that could be easily searched by typing a few words. And the simplest and fastest way to do that is using a browser and a static web page, `index.html`. We also wanted it to be
- * offline and private. No sending images to remote servers.
- * back-end development. Publish the photo album as a website, if you want.
- * a simple utility. No cumbersome apps. Albums launch in browser.
+ * Offline and private. Optionally use OpenAI or Google.
+ * Internet-ready. Can publish album as a website.
+ * Simple utility. Search photos in browser.
+ * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ## Get updates from GitHub
 
@@ -183,7 +181,7 @@ printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write 
 
 The `printf` `--` option tells printf not to interpret everything as options. The `%q` outputs file names with spaces and special characters properly escaped. We could have used `find` for this. The `nullglob` option to `shopt` is necessary to prevent bash from causing errors if no images are found matching [pattern]. Bash tries to pass off the glob pattern itself as one of the images. So we turn that feature off. 
 
-You can even recurse subdirectories with `printf`, if you enable globstar `shopt -s globstar`. For more information (FYI): `pinfo bash --node "The Shopt Builtin"`.
+You can even recurse sub-directories with `printf`, if you enable globstar `shopt -s globstar`. For more information (FYI): `pinfo bash --node "The Shopt Builtin"`.
 
 ### Update from .csv
 
@@ -313,7 +311,7 @@ Search for text captions in the browser by pressing `CTRL+F`. It will scroll to 
 
 ## Advanced search
 
-There is some javascript to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
+There is some JavaScript to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
 
 ## Closing thoughts
 
