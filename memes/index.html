@@ -1,67 +1,174 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="generator" content=
-  "HTML Tidy for HTML5 for Linux version 5.8.0">
-  <title></title>
-  <link rel="stylesheet" href="../album.css">
-  <script defer src="../memesearch.js"></script>
-</head>
-<body>
-<header>
-<div>
-    <input class="search" placeholder="Search..." type="search" id="search">
-    <svg role="presentation" class="i-search" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#888" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
-      <circle cx="14" cy="14" r="12" />
-      <path d="M23 23 L30 30" />
-    </svg>
-</div>
-</header>
-  <figure>
-    <img src="Belief.png" alt="[Belief.png]">
-    <figcaption>
-      A neon sign that reads "BELIEF" against a dark background.
-    </figcaption>
-  </figure><figure>
-    <img src="disclaimers.png" alt="[disclaimers.png]">
-    <figcaption>
-      Spongebob is holding up his arms and smiling under a rainbow.
-    </figcaption>
-  </figure><figure>
-    <img src="discussed.png" alt="[discussed.png]">
-    <figcaption>
-      A picture of a fish that is yellow and brown and it's mouth
-      is open.
-    </figcaption>
-  </figure><figure>
-    <img src="dogs.png" alt="[dogs.png]">
-    <figcaption>
-      The image features a cartoon of two dogs, a white and a
-      yellow one, set against a blue background. The white dog is
-      standing on its hind legs, with its front paws on the yellow
-      dog's chest. The yellow dog is standing on all fours. Above
-      them, there is a text that reads "Everything I need to know I
-      learned from my dog" and below them, another text that reads
-      "Chapter one there is nothing in the world as interesting as
-      a butthole". The cartoon is credited to 2015 Aaron J. French
-      and can be found at mandatoryyoloyo.com.
-    </figcaption>
-  </figure><figure>
-    <img src="godyes.png" alt="[godyes.png]">
-    <figcaption>
-      A cartoon of a face with a black and white expression and the
-      words "oh god yes" in the middle.
-    </figcaption>
-  </figure><figure>
-    <img src="grammar-correction-facebook.png" alt="[grammar-correction-facebook.png]">
-    <figcaption>
-      The image shows a message window on a computer screen with a
-      blue chat bubble. The chat bubble contains a message that
-      reads, "i just received your email and it was beautifully
-      written, your such a poet". The message is addressed to
-      someone named "you". There is a text box below the chat
-      bubble that says, "Clear Window".
-    </figcaption>
-  </figure>
-  </body>
-</html>
+<!DOCTYPE html><html><head><link type="text/css" id="dark-mode" rel="stylesheet" href=""><style type="text/css" id="dark-mode-custom-style"></style>
+        <meta charset="UTF-8"><!--//
+    AI Image Gallery.
+    Copyright (C) 2024 Henry F Kroll III, www.thenerdshow.com
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+        //-->
+        <title>Image Gallery</title>
+        <style>
+        html {
+            height: 100%;
+            width: 100%;
+        }
+        #root {
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+        }
+        a {
+            color: #eee;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #ccc;
+        }
+        body {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            margin: 0;
+            padding: 0;
+            background-color: #333; /* Charcoal gray */
+            color: white;
+            font-family: arial,verdana,helvetica,sans-serif;
+        }
+        p {
+            font-size:12pt;
+        }
+        figure {
+            width:320px;
+            display:inline;
+            white-space: nowrap;
+        }
+        figure:hover{
+            white-space: normal;
+        }
+        figcaption {
+            position: relative;
+            width: inherit;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: #181818;
+        }
+        header {
+            width: 100%;
+            background-color: #101010;
+        }
+        header div * {
+            position: relative;
+            -webkit-border-radius: 5px;
+        }
+        header div {
+            margin: 0 auto;
+            width: 350px;
+        }
+        .button {
+        	background:linear-gradient(to bottom, #e6e6e6 5%, #757575 100%);
+        	background-color:#e6e6e6;
+        	border-radius:5px;
+        	display:inline-block;
+        	cursor:pointer;
+        	color:#505739;
+        	font-family:Arial;
+        	font-size:14px;
+        	font-weight:bold;
+        	padding:5px;
+        	text-decoration:none;
+        }
+        .button:hover {
+        	background:linear-gradient(to bottom, #757575 5%, #e6e6e6 100%);
+        	background-color:#757575;
+        }
+        .button:active {
+        	position:relative;
+        	top:1px;
+        }
+        </style>
+    </head>
+    <body><header>
+    
+    <div>
+        <input class="search" placeholder="Search..." type="search" id="search">
+        <svg role="presentation" class="i-search" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="#888" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+          <circle cx="14" cy="14" r="12"></circle>
+          <path d="M23 23 L30 30"></path>
+        </svg>
+    </div>
+    </header>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="Belief.png" alt="Belief.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="Belief_png">The word "BELIEF" is spelled out in neon lights. The letters "BE" are white, and the letters "LIE" are red, giving a bright, modern, and abstract look.</figcaption>
+            </figure>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="disclaimers.png" alt="disclaimers.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="disclaimers_png">A cartoon Spongebob is smiling and raising his hands.  He is standing beneath a rainbow with the word "disclaimers" written on it in a swirly font.  The background is a blue and yellow, cartoon-style scene. 
+</figcaption>
+            </figure>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="discussed.png" alt="discussed.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="discussed_png">This is a meme of a moray eel with the caption "People who talk about me behind my back". The eel has a surprised expression and is looking directly at the viewer. The meme implies that the eel is aware of the gossip and is ready to confront the person who is talking about them.  The bottom text reads "You discussed me." 
+</figcaption>
+            </figure>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="dogs.png" alt="dogs.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="dogs_png">Invalid operation: The `response.text` quick accessor requires the response to contain a valid `Part`, but none were returned. Please check the `candidate.safety_ratings` to determine if the response was blocked.</figcaption>
+            </figure>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="godyes.png" alt="godyes.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="godyes_png">The image is a meme featuring a cartoon face split in half, one side black and the other white. Above the face is the text "OH GOD," and below it is the text "YES." The image conveys a feeling of resigned acceptance or ironic amusement.  </figcaption>
+            </figure>
+        
+            <figure style="float: left; margin: 10px;">
+                <img src="grammar-correction-facebook.png" alt="grammar-correction-facebook.png" style="width: 320px;"><br>
+                <figcaption onclick="blank(this)" contenteditable="true" id="grammar-correction-facebook_png">A screenshot of a Facebook message exchange.  The user is sending a flirty message, praising the recipient’s writing skills and saying they are a “poet”.  The recipient responds in a self-deprecating manner.</figcaption>
+            </figure>
+        
+    <script>
+        // Search functions
+        let figures = document.querySelectorAll('figure');
+
+        function init() {
+            let search = document.getElementById('search');
+            search.addEventListener('keyup', filterFigures, true);
+            search.addEventListener('click', (e) => {
+                e.target.select();
+                filterFigures(e);
+            }, true);
+        }
+
+        function filterFigures(event) {
+            if (event.key == "Escape") event.target.value = '';
+            let searchTerm = event.target.value.trim().toLowerCase();
+            if (searchTerm.length == 0) searchTerm = ' ';
+            figures.forEach(figure => {
+                if (!figure.querySelector('figcaption')) {
+                    console.log(figure.querySelector('img').src);
+                    figure.style.display = 'inline-block';
+                } else
+                if (figure.querySelector('figcaption').innerText.toLowerCase()
+                    .includes(searchTerm))
+                    figure.style.display = 'inline-block';
+                else figure.style.display = 'none';
+            });
+        }
+        init();
+    </script>
+    </body></html>

@@ -6,10 +6,10 @@ Who doesn't have a folder of their favorite memes? But it becomes tedious scroll
 
 Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
 
-What was needed was a way to display images with captions that could be easily searched by typing a few words. And the simplest and fastest way to do that is using a browser. We also wanted it to be
+What was needed was a way to display images with captions that could be easily searched by typing a few words. And the simplest and fastest way to do that is using a browser and a static web page, `index.html`. We also wanted it to be
  * offline and private. No sending images to remote servers.
- * back-end development. Publish as a website, if you want.
- * a simple utility. No cumbersome apps. Lauch album in browser.
+ * back-end development. Publish the photo album as a website, if you want.
+ * a simple utility. No cumbersome apps. Albums launch in browser.
 
 ![preview](preview.png)
 
@@ -22,7 +22,91 @@ cd FindAImage
 
 Or, if it's already downloaded, `git pull`.
 
-## Install dependencies
+## Python Dependencies
+
+`pip install -r requirements.txt`
+
+## Optional ChatGPT from OpenAI
+
+Export `OPENAI_API_KEY` to enable ChatGPT. Edit `.bashrc`, or another startup file:
+
+```shell
+export OPENAI_API_KEY=<my API key>
+```
+
+## Optional Google Gemini
+
+* Sign up for a [GOOGLE_API_KEY](https://aistudio.google.com)
+* `pip install -q -U google-generativeai`
+* `export GENAI_KEY=<YOUR API_KEY>`
+
+## Local LLAVA server
+
+A local server is a good way to generate captions and keep images private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
+
+We set up a llama.cfg that includes a link to our model:
+
+```shell
+{
+    "host": "0.0.0.0",
+    "port": 8087,
+    "root_path": "/completion",
+    "models": [
+        {
+            "model": "/home/k/.local/share/models/llava-phi-3-mini-int4.gguf",
+            "model_alias": "llava-phi-3",
+            "chat_format": "llava-1-5",
+            "clip_model_path":
+"/home/k/.local/share/models/llava-phi-3-mini-mmproj-f16.gguf",
+            "n_gpu_layers": 13,
+            "offload_kqv": true,
+            "n_threads": 7,
+            "n_batch": 512,
+            "n_ctx": 1024
+        },
+        
+...
+        
+    ]
+}
+```
+
+Then we make sure `memes/AImages.py` matches the configuration we set up.
+
+```shell
+...
+    elif ai_model == 'local':
+        lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
+        # This uses the self-hosted path, which should be okay if the server
+        # is on the same machine or network.
+        url = f"{host}:{port}/images/{filename}"
+        print(url)
+        response = lclient.chat.completions.create(
+            model = "llava-phi-3",
+            messages=[
+```
+
+## Photo Album Builder
+
+The builder uses `gradio` to launch a web page. The web page is a builder that you can use to generate another web page that will be your photo album.
+
+Once AI is set up, you can use `./FindAImage.py memes` to start the builder in th memes directory. From there, you can
+- select an AI model in the upper-left corner, 
+- click buttons to generate captions,
+- click inside text boxes to manually edit captions, 
+- and save the annotated photo album.
+
+Once completed, copy the saved `index.html` back to the directory where the images are. That will be your new photo album.
+
+You can now try it with other image folders.
+
+```shell
+./memes/FindAImage.py ~/Pictures/2024
+```
+
+## Linux Tutorial
+
+This part is no longer required, but recommended. Learn using local AI from the command line on Linux. This is how we figured out what we needed to know to make the builder.
 
 Install at least tidy. If you need documentation, consider also installing `pinfo`.
 
