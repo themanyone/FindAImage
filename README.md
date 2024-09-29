@@ -4,14 +4,14 @@ Using AI image descriptions to organize memes.
 
 Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
 
-Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
+![preview](preview.png)
+
+Now that AI can describe photos, the first idea was to create a searchable database to store the memes, along with their descriptions. But the the pictures already exist inside a folder. Isn't that some sort of database already? The next idea was to add metadata to the images. But the metadata isn't (yet, we're working on that) searchable except by using tools like `grep` from the command line. And it modifies the files. We don't want to do that.
 
 What was needed was a way to display images with captions that could be easily searched by typing a few words. And the simplest and fastest way to do that is using a browser and a static web page, `index.html`. We also wanted it to be
  * offline and private. No sending images to remote servers.
  * back-end development. Publish the photo album as a website, if you want.
  * a simple utility. No cumbersome apps. Albums launch in browser.
-
-![preview](preview.png)
 
 ## Get updates from GitHub
 
@@ -71,7 +71,7 @@ We set up a llama.cfg that includes a link to our model:
 }
 ```
 
-Then we make sure `memes/AImages.py` matches the configuration we set up.
+Then we make sure `memes/AImages.py` matches the configuration we set up. Also make sure the port numbers match up. We're using port 8087 for these examples for no particular reason.
 
 ```shell
 ...
@@ -90,23 +90,27 @@ Then we make sure `memes/AImages.py` matches the configuration we set up.
 
 The builder uses `gradio` to launch a web page. The web page is a builder that you can use to generate another web page that will be your photo album.
 
-Once AI is set up, you can use `./FindAImage.py memes` to start the builder in th memes directory. From there, you can
+Once AI is set up, you can use `./FindAImage.py memes` to start the builder in the memes directory. Open the link it gives with a browser. 
+
+For example, `firefox http://localhost:9165`
+
+From there, you can
 - select an AI model in the upper-left corner, 
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
 
-Once completed, copy the saved `index.html` back to the directory where the images are. That will be your new photo album.
+Once completed, copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) to search images.
 
-You can now try it with other image folders.
+You can try making photo albums in other image folders.
 
 ```shell
-./memes/FindAImage.py ~/Pictures/2024
+./FindAImage.py ~/Pictures/2024
 ```
 
 ## Linux Tutorial
 
-This part is no longer required, but recommended. Learn using local AI from the command line on Linux. This is how we figured out what we needed to know to make the builder.
+This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. This is how we figured out what we needed to know to make the builder.
 
 Install at least tidy. If you need documentation, consider also installing `pinfo`.
 
@@ -191,7 +195,7 @@ Or if you have `xsel` installed. You can work with .csv data copied to the clipb
 
 `IFS="," read -r -a a <<< "$(xsel -b)"`
 
-The `IFS` file seperator tells Bash the file is comma-separated. FYI: `pinfo bash --node "Word Splitting"`
+The `IFS` file separator tells Bash the file is comma-separated. FYI: `pinfo bash --node "Word Splitting"`
 
 ```
 echo "${a[@]}"|xargs printf -- "--image %q " | xargs llava_phi3.sh -p "Write a quick, 10-50 word caption for this image. Just one caption. Minimum 10 words." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
