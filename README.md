@@ -2,14 +2,14 @@
 
 Using AI image descriptions to organize memes.
 
-Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
+ * Simple utility. Search photos in browser.
+ * Offline and private. Optionally use OpenAI or Google.
+ * Internet-ready. Can publish album as a website.
+ * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ![preview](preview.png)
 
- * Offline and private. Optionally use OpenAI or Google.
- * Internet-ready. Can publish album as a website.
- * Simple utility. Search photos in browser.
- * Free and open-source. NO WARRANTIES. See LICENSE.
+Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
 
 ## Get updates from GitHub
 
