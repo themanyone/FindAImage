@@ -42,7 +42,7 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is a good way to generate captions and keep images private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
-We set up a llama.cfg that includes a link to our model:
+We set up a `llama.cfg` that includes a link to our model:
 
 ```shell
 {
@@ -93,7 +93,7 @@ Once AI is set up, you can use `./FindAImage.py memes` to start the builder in t
 For example, `firefox http://localhost:9165`
 
 From there, you can
-- select an AI model in the upper-left corner, 
+- select a model from the drop-down menu in the upper-left,
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
@@ -106,9 +106,21 @@ You can try making photo albums in other image folders.
 ./FindAImage.py ~/Pictures/2024
 ```
 
-## Linux Tutorial
+## Bonus Chat
 
-This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. This is how we figured out what we needed to know to make the builder.
+After you get bored making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with images using a variety of local LLMs.
+
+![chat](chat.png)
+
+Make sure that you
+- start server with  `--config_file=llama.cfg`,
+- download several `.gguf` models,
+- populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python).
+- have at least one llava model for images.
+
+# Linux Tutorial
+
+This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. This is where we figured out what we needed to know to make this stuff.
 
 Install at least tidy. If you need documentation, consider also installing `pinfo`.
 
@@ -123,7 +135,7 @@ Arch
 
 ## Install [llama.cpp](https://github.com/themanyone/llama.cpp.git)
 
-For this project, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
+For this section, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
 
 ```bash
 git clone https://github.com/themanyone/llama.cpp.git
