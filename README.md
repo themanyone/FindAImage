@@ -69,7 +69,7 @@ We set up a `llama.cfg` that includes a link to our model:
 }
 ```
 
-Then we make sure `memes/AImages.py` matches the configuration we set up. Also make sure the port numbers match up. We're using port 8087 for these examples for no particular reason.
+Then we make sure `AImages.py` matches the configuration we set up. Also make sure the port numbers match up. We're using port 8087 for these examples for no particular reason.
 
 ```shell
 ...
