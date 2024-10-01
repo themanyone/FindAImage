@@ -86,19 +86,17 @@ Then we make sure `AImages.py` matches the configuration we set up. Also make su
 
 ## Photo Album Builder
 
-The builder uses `gradio` to launch a web page. The web page is a builder that you can use to generate another web page that will be your photo album.
-
-Once AI is set up, you can use `./FindAImage.py memes` to start the builder in the memes directory. Open the link it gives with a browser. 
+Once `llama-cpp-python` is set up and running, you can use `./FindAImage.py memes` to caption photos in the memes directory. It will print a URL for the photo album builder.
 
 For example, `firefox http://localhost:9165`
 
-From there, you can
+Open the link to the photo album builder. From there, you can
 - select a model from the drop-down menu in the upper-left,
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
 
-Once completed, copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) to search images.
+Copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) to search images.
 
 You can try making photo albums in other image folders.
 
@@ -108,7 +106,7 @@ You can try making photo albums in other image folders.
 
 ## Bonus Chat
 
-After you get bored making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with images using a variety of local LLMs.
+After you get bored making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with local LLMs, upload images (for models that support them), read and translate text in the images, or ask questions about them.
 
 ![chat](chat.png)
 
@@ -120,9 +118,9 @@ Make sure that you
 
 # Linux Tutorial
 
-This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. This is where we figured out what we needed to know to make this stuff.
+This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
 
-Install at least tidy. If you need documentation, consider also installing `pinfo`.
+Install at least tidy. For documentation, consider also installing `pinfo`.
 
 Fedora, Centos.
 `dnf install tidy pinfo`
@@ -159,7 +157,7 @@ Obtain a [llava model](https://huggingface.co/xtuner/llava-phi-3-mini-gguf/tree/
 
 ```bash
 wget -c https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-phi-3-mini-int4.gguf?download=true
-wget https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-phi-3-mini-mmproj-f16.gguf?download=true
+wget -c https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-phi-3-mini-mmproj-f16.gguf?download=true
 ```
 
 ## Build scripts
@@ -197,7 +195,7 @@ You can even recurse sub-directories with `printf`, if you enable globstar `shop
 
 ### Update from .csv
 
-Someday you might want to update the captions, working with a subset of images in a comma-separated, quoted `.csv` file. This is made possible by reading the data into an array. FYI: `pinfo bash --node "Arrays"`
+Someday it might be necessary to update the captions, working with a subset of images in a comma-separated, quoted `.csv` file. This is made possible by reading the data into an array. FYI: `pinfo bash --node "Arrays"`
 
 `IFS="," read -r -a a <<< "files.csv"`
 
