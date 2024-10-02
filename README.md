@@ -11,6 +11,8 @@ Using AI image descriptions to organize memes.
 
 Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
 
+[Support development.](https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG) (PayPal donation link).
+
 ## Get updates from GitHub
 
 ```bash
@@ -42,7 +44,7 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is a good way to generate captions and keep images private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
-We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM.
+We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM. [Get models from here](https://huggingface.co/hellork).
 
 ```shell
 {
@@ -112,7 +114,7 @@ After you get bored making captions for images, try out `aichat.py`. It starts a
 
 Make sure that you
 - start server with  `--config_file=llama.cfg`,
-- download several `.gguf` models,
+- download several `.gguf` [models from here](https://huggingface.co/hellork),
 - populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python).
 - have at least one llava model for images.
 
