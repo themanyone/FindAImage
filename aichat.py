@@ -91,7 +91,7 @@ body { height: 100%; }
 #chatbot { flex-grow: 1; overflow: auto;}
 """
 
-with gr.Blocks(theme=gr.themes.Soft(), js=js, css=css, fill_height=True) as demo:
+with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_height=True) as demo:
     with gr.Row(equal_height=False):
         with gr.Column(scale=5):
             chat_interface = gr.ChatInterface(
