@@ -5,6 +5,7 @@ Using AI image descriptions to organize memes.
  * Simple utility. Search photos in browser.
  * Offline and private. Optionally use OpenAI or Google.
  * Internet-ready. Can publish album as a website.
+ * Low requirements. No huge dependencies. 4GiB VRAM.
  * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ![preview](preview.png)
