@@ -1,8 +1,6 @@
 #!/usr/bin/python
-import os
 import io
 import base64
-import tempfile
 import gradio as gr
 from PIL import Image
 from openai import OpenAI
@@ -28,28 +26,28 @@ client = OpenAI(base_url="http://localhost:8087/v1", api_key="llama.cpp")
 # Get available models initially
 models = [model.id for model in client.models.list()]
 
-def predict(message, history, model, image=None):
+def predict(prompt, history, model, image=None):
     print(f"Received image: {image}")  # Debugging line
     messages = []
     print(f"Model in use: {model}")
     print()
-    
+
     # Add previous messages to the conversation history
     for user_message, assistant_message in history:
         messages.append({"role": "user", "content": user_message})
         messages.append({"role": "assistant", "content": assistant_message})
 
     if image is not None:
-        image = image.resize((64, 64))
+        image = image.resize((250, 250))
         # Convert the image to base64
         buffered = io.BytesIO()
         image.save(buffered, format="PNG")
         image_bytes = buffered.getvalue()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')  # Decode to string
-        
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
         # Create the data URL
         image_url = f"data:image/png;base64,{image_base64}"
-        
+
         # Include the image URL and text message separately
         messages.append({"role": "user", "content": [
                         {
@@ -58,31 +56,31 @@ def predict(message, history, model, image=None):
                                 "url": image_url
                             },
                         },
-                        {"type": "text", "text": message},
+                        {"type": "text", "text": prompt},
                     ]})  # Image URL inside
     else:
-        messages.append({"role": "user", "content": message})
-    
+        messages.append({"role": "user", "content": prompt})
+
     response = client.chat.completions.create(
         model=model, messages=messages, stream=True,
         stop=["<|im_end|>", "###"]
     )
-    
+
     full_response = ""  # Store the complete response
     for chunk in response:
         content = chunk.choices[0].delta.content
         if content:
             full_response += content
-            
+
     return full_response  # Return the complete response as a string
 
-js = """function () {
+JS = """function () {
   gradioURL = window.location.href
   if (!gradioURL.endsWith('?__theme=dark')) {
     window.location.replace(gradioURL + '?__theme=dark');
   }
 }"""
-css = """
+CSS = """
 footer {
     visibility: hidden;
 }
@@ -126,7 +124,7 @@ with gr.Blocks(theme=gr.themes.Soft(), js=js, css=css, fill_height=True) as demo
         inputs=[model_dropdown, image_input],
         outputs=None
     )
-    
+
     image_input.change(
         fn=update_chatbot,
         inputs=[model_dropdown, image_input],

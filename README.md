@@ -42,7 +42,7 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is a good way to generate captions and keep images private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
-We set up a `llama.cfg` that includes a link to our model:
+We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM.
 
 ```shell
 {
@@ -56,7 +56,7 @@ We set up a `llama.cfg` that includes a link to our model:
             "chat_format": "llava-1-5",
             "clip_model_path":
 "/home/k/.local/share/models/llava-phi-3-mini-mmproj-f16.gguf",
-            "n_gpu_layers": 13,
+            "n_gpu_layers": 7,
             "offload_kqv": true,
             "n_threads": 7,
             "n_batch": 512,
@@ -69,7 +69,7 @@ We set up a `llama.cfg` that includes a link to our model:
 }
 ```
 
-Then we make sure `AImages.py` matches the configuration we set up. Also make sure the port numbers match up. We're using port 8087 for these examples for no particular reason.
+Then we make sure `AImages.py` matches the configuration we set up. If you change the above `port`, also change `LLAVA_ENDPOINT` in `FindAImage.py`. We're using port 8087 for these examples for no particular reason.
 
 ```shell
 ...
@@ -86,11 +86,11 @@ Then we make sure `AImages.py` matches the configuration we set up. Also make su
 
 ## Photo Album Builder
 
-Once `llama-cpp-python` is set up and running, you can use `./FindAImage.py memes` to caption photos in the memes directory. It will print a URL for the photo album builder.
+Once `llama-cpp-python` is set up and running, you can use `./FindAImage.py memes` to caption photos in the memes directory. It will print a URL for the photo album builder. `Ctrl+click` it to open it. Monitor memory usage with `nvtop`.
 
-For example, `firefox http://localhost:9165`
+The link might look something like this. `http://localhost:9165`
 
-Open the link to the photo album builder. From there, you can
+From there, you can
 - select a model from the drop-down menu in the upper-left,
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 

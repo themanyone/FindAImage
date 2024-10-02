@@ -1,15 +1,22 @@
 #!/usr/bin/python
-from flask import Flask, request, send_from_directory, render_template_string, jsonify
+from flask import Flask, send_from_directory, render_template_string, jsonify
+import io
 import os, sys
+import base64
 #import webbrowser
+from PIL import Image
 from openai import OpenAI
 client = OpenAI()
 import google.generativeai as genai
 app = Flask(__name__)
+from figs import parse_html
 
 ai_model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp endpoint
 LLAVA_ENDPOINT = "http://localhost:8087/v1"
+lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
+# "chat_format": "llava-1-5"
+models = [model.id for model in lclient.models.list() if "llava" in model.id or "vision" in model.id]
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -18,9 +25,16 @@ genai.configure(api_key=GEMINI_API_KEY)
 # Configure OpenAI
 gpt_key = os.getenv("OPENAI_API_KEY")
 OpenAI.api_key = gpt_key
+# Existing captions will go here
+figures_collection = {}
 
 @app.route('/')
 def gallery():
+    global figures_collection
+    # Get captions (figures_collection) from index.html, if it exists
+    file_path = os.path.join(IMAGE_FOLDER, 'index.html')
+    if os.path.isfile(file_path):
+        figures_collection = parse_html(file_path)
     image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.endswith(('.png', '.jpg', '.jpeg'))]
     return render_template_string('''<head>
         <meta charset="UTF-8"><!--//
@@ -132,34 +146,38 @@ def gallery():
         </ul>
         <a class="button" onClick="this.parentElement.style.display='none'" href="">Okay. Got it.</a>
     </span>
-    <label for="ai" style="position:absolute">AI to use 
+    <label for="ai" style="position:absolute; left:5px; top: 5px;">AI to use 
         <select id="ai" onChange="switch_ai(this.value)">
             <option value="lorem">Lorem Ipsum</option>
             <option value="openai">OpenAI</option>
             <option value="gemini">Gemini</option>
-            <option value="local">Local LLaMA</option>
+        {% for model in models %}
+            <option value="{{ model }}">{{ model }}</option>
+        {% endfor %}
         </select>
     </label>
     <div>
         <input class="search" placeholder="Search..." type="search" id="search">
-        <svg role="presentation" class="i-search" viewBox="0 0 32 32" width="24" height="24" 
+        <svg role="presentation" class="i-search" viewBox="0 0 32 32" width="24" height="24"
     fill="none" stroke="#888" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
           <circle cx="14" cy="14" r="12" />
           <path d="M23 23 L30 30" />
         </svg>
     <a class="button" id="download">Save Gallery</a></div>
+    <a style="position:absolute; right:5px; top:5px;" href="https://github.com/themanyone/FindAImage">FindAImage</a>
     </header>
         {% for image in images %}
             <figure style="float: left; margin: 10px;">
                 <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" style="width: 320px;"><br>
-                <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">Click to add searchable caption...</figcaption>
+                <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
             <a class="button" onclick="describeImage('{{ image }}')">Use AI</a></figure>
         {% endfor %}
     <script>
         function switch_ai(val) {
-            console.log(val);
+            //console.log(val);
             fetch('/model/' + val)
         }
+        switch_ai(document.getElementById('ai').value);
         function describeImage(imageName) {
             success = false;
             ele = document.getElementById(imageName.replace('.', '_'))
@@ -244,7 +262,7 @@ def gallery():
             if (searchTerm.length == 0) searchTerm = ' ';
             figures.forEach(figure => {
                 if (!figure.querySelector('figcaption')) {
-                    console.log(figure.querySelector('img').src);
+                    //console.log(figure.querySelector('img').src);
                     figure.style.display = 'inline-block';
                 } else
                 if (figure.querySelector('figcaption').innerText.toLowerCase()
@@ -255,7 +273,7 @@ def gallery():
         }
         init();
     </script>
-    ''', images=image_files)
+    ''', images=image_files, figures=figures_collection, models=models)
 
 @app.route('/model/<ai>')
 def model_switch(ai):
@@ -283,29 +301,33 @@ def describe_image(filename):
             return jsonify({"description": f"{result.text}"})
         except ValueError as ve:
             return jsonify({"description": f"{ve}"})
-    elif ai_model == 'local':
-        lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
-        # This uses the self-hosted path, which should be okay if the server
-        # is on the same machine or network.
-        url = f"{host}:{port}/images/{filename}"
-        print(url)
+    elif ai_model in models:
+        global lclient
+        pic = Image.open(image_path)
+        image = pic.resize((250, 250))
+        # Convert the image to base64
+        buffered = io.BytesIO()
+        image.save(buffered, format="PNG")
+        image_bytes = buffered.getvalue()
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+        # Create the data URL
+        image_url = f"data:image/png;base64,{image_base64}"
+
         response = lclient.chat.completions.create(
-            model = "llava-phi-3",
+            model = ai_model,
             messages=[
-                {
-                    "role": "user",
-                    "content": [
+               {"role": "user", "content": [
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": url
+                                "url": image_url
                             },
                         },
                         {"type": "text", "text": prompt},
-                    ],
-                    "stop": [ "###" ],
-                }
-            ],
+                    ]}
+            ], stream=False,
+            stop=["<|im_end|>", "###"]
         )
         return jsonify({"description": response.choices[0].message.content})
     elif ai_model == 'openai' and gpt_key:
