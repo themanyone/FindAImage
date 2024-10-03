@@ -1,6 +1,6 @@
 # FindAImage
 
-Using AI image descriptions to organize memes.
+Using AI image descriptions to organize the meme portfolio.
 
  * Simple utility. Search photos in browser.
  * Offline and private. Optionally use OpenAI or Google.
@@ -10,9 +10,9 @@ Using AI image descriptions to organize memes.
 
 ![preview](preview.png)
 
-Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes to find the right one for every occasion.
+Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes and photos to find the right one for every occasion.
 
-[Support development.](https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG) (PayPal donation link).
+Enjoying it so far, or want more features? [Support development.](https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG) (PayPal donation link).
 
 ## Get updates from GitHub
 
@@ -43,7 +43,7 @@ export OPENAI_API_KEY=<my API key>
 
 ## Local LLAVA server
 
-A local server is a good way to generate captions and keep images private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
+A local server is a good way to generate captions, avoid censorship, and keep everything private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
 We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM. [Get models from here](https://huggingface.co/hellork).
 
@@ -87,21 +87,33 @@ Then we make sure `AImages.py` matches the configuration we set up. If you chang
             messages=[
 ```
 
+For best results,
+- start server with  `--config_file=llama.cfg`,
+- download several `.gguf` [models from here](https://huggingface.co/hellork),
+- populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python),
+- and have at least one llava model for images.
+
 ## Photo Album Builder
 
-Once `llama-cpp-python` is set up and running, you can use `./FindAImage.py memes` to caption photos in the memes directory. It will print a URL for the photo album builder. `Ctrl+click` it to open it. Monitor memory usage with `nvtop`.
+Once `llama-cpp-python` is set up and running, and cofigured with some models, you can test captioning photos in the memes directory. This will create a server to host the photo album builder. The builder then creates a web page that will be the photo album.
+
+`./FindAImage.py memes`
+
+You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or type it into your browser. Monitor memory usage with `nvtop`.
 
 The link might look something like this. `http://localhost:9165`
 
-From there, you can
+If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will use those.
+
+Once you open the web page, you can
 - select a model from the drop-down menu in the upper-left,
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
 
-Copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) to search images.
+Copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images.
 
-You can try making photo albums in other image folders.
+Now try making portfolios out of other image folders.
 
 ```shell
 ./FindAImage.py ~/Pictures/2024
@@ -109,19 +121,13 @@ You can try making photo albums in other image folders.
 
 ## Bonus Chat
 
-After you get bored making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with local LLMs, upload images (for models that support them), read and translate text in the images, or ask questions about them.
+When done making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with the local LLMs you downloaded, upload images (for models that support them), read and translate text in the images, or ask questions about them.
 
 ![chat](chat.png)
 
-Make sure that you
-- start server with  `--config_file=llama.cfg`,
-- download several `.gguf` [models from here](https://huggingface.co/hellork),
-- populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python).
-- have at least one llava model for images.
-
 # Linux Tutorial
 
-This part is no longer required, but recommended. Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
+This section is no longer required, but recommended. Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
 
 Install at least tidy. For documentation, consider also installing `pinfo`.
 
@@ -165,7 +171,7 @@ wget -c https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-p
 
 ## Build scripts
 
-Create a script to launch the llava model and mmproj file together with your favorite options. Running this command will recreate `~/.local/bin/llava_phi3.sh`. But maybe you should edit this in case locations are different.
+Create a script to launch the llava model and mmproj file together with your favorite options. Running this command will recreate `~/.local/bin/llava_phi3.sh`. But maybe you should edit this in case locations are different. The `-ngl 16` loads some of the model into VRAM. Increase it to `-ngl 33` if you have plenty of AI resources.
 
 ```bash
 cat << EOF > ~/.local/bin/llava_phi3.sh

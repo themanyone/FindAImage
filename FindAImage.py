@@ -3,19 +3,20 @@ from flask import Flask, send_from_directory, render_template_string, jsonify
 import io
 import os, sys
 import base64
-#import webbrowser
+import urllib.parse
 from PIL import Image
 from openai import OpenAI
 client = OpenAI()
 import google.generativeai as genai
 app = Flask(__name__)
 from figs import parse_html
+from xmp import get_keywords
 
 ai_model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp endpoint
 LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
-# "chat_format": "llava-1-5"
+# Discover llava models to show in dropdown box
 models = [model.id for model in lclient.models.list() if "llava" in model.id or "vision" in model.id]
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
@@ -25,17 +26,20 @@ genai.configure(api_key=GEMINI_API_KEY)
 # Configure OpenAI
 gpt_key = os.getenv("OPENAI_API_KEY")
 OpenAI.api_key = gpt_key
-# Existing captions will go here
+# Fill collection with existing captions / EXIF XMP keywords
 figures_collection = {}
 
 @app.route('/')
 def gallery():
-    global figures_collection
+    global figures_collection, keywords
     # Get captions (figures_collection) from index.html, if it exists
-    file_path = os.path.join(IMAGE_FOLDER, 'index.html')
-    if os.path.isfile(file_path):
-        figures_collection = parse_html(file_path)
+    index_path = os.path.join(IMAGE_FOLDER, 'index.html')
     image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.endswith(('.png', '.jpg', '.jpeg'))]
+    if os.path.isfile(index_path):
+        figures_collection = parse_html(index_path)
+    else:
+        for image in image_files:
+            figures_collection[image] = get_keywords(os.path.join(IMAGE_FOLDER, image))
     return render_template_string('''<head>
         <meta charset="UTF-8"><!--//
     AI Image Gallery.
