@@ -4,7 +4,8 @@ import base64
 import gradio as gr
 from PIL import Image
 from openai import OpenAI
-license = """    AI Chat Interface
+
+LICENSE = """    AI Chat Interface
     Copyright (C) 2024 Henry F Kroll III, www.thenerdshow.com
 
     This program is free software; you can redistribute it and/or modify
@@ -81,9 +82,6 @@ JS = """function () {
   }
 }"""
 CSS = """
-footer {
-    visibility: hidden;
-}
 .contain { display: flex; flex-direction: column; }
 .gradio-container { height: 100vh !important; }
 body { height: 100%; }
@@ -91,7 +89,7 @@ body { height: 100%; }
 #chatbot { flex-grow: 1; overflow: auto;}
 """
 
-with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_height=True) as demo:
+with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_height=True, title="Local AI Chat - FindAImage") as demo:
     with gr.Row(equal_height=False):
         with gr.Column(scale=5):
             chat_interface = gr.ChatInterface(

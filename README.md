@@ -5,7 +5,7 @@ Using AI image descriptions to organize the meme portfolio.
  * Simple utility. Search photos in browser.
  * Offline and private. Optionally use OpenAI or Google.
  * Internet-ready. Can publish album as a website.
- * Low requirements. No huge dependencies. 4GiB VRAM.
+ * Light wight. Does not require torch. 4GiB VRAM.
  * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ![preview](preview.png)
@@ -43,7 +43,7 @@ export OPENAI_API_KEY=<my API key>
 
 ## Local LLAVA server
 
-A local server is a good way to generate captions, avoid censorship, and keep everything private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the project using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
+A local server is a good way to generate captions, avoid censorship, and keep everything private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the OpenAI Compatible Web Server using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
 We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM. [Get models from here](https://huggingface.co/hellork).
 
@@ -104,6 +104,9 @@ You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or
 The link might look something like this. `http://localhost:9165`
 
 If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will use those.
+
+**Supervise children.** Be aware that these models are under active development. Their 
+output, though usually fine, *may not always be safe* for all ages.
 
 Once you open the web page, you can
 - select a model from the drop-down menu in the upper-left,
