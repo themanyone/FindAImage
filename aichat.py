@@ -1,9 +1,13 @@
 #!/usr/bin/python
+"""Module: AI Chat Interface
+Description: This module defines the interface and server for an artificial 
+intelligence-powered chat system. It features image queries and a rating system in 
+addition to the usual chat functions."""
 import io
-import time
 import base64
+from pprint import pprint
 import gradio as gr
-from PIL import Image
+# from PIL import Image
 from openai import OpenAI
 
 LICENSE = """    AI Chat Interface
@@ -21,60 +25,13 @@ LICENSE = """    AI Chat Interface
 
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA."""
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    """
 
 client = OpenAI(base_url="http://localhost:8087/v1", api_key="llama.cpp")
 
 # Get available models initially
 models = [model.id for model in client.models.list()]
-
-def predict(prompt, history, model, image=None):
-    print(f"Received image: {image}")  # Debugging line
-    messages = []
-    print(f"Model in use: {model}")
-    print()
-
-    # Add previous messages to the conversation history
-    for user_message, assistant_message in history:
-        messages.append({"role": "user", "content": user_message})
-        messages.append({"role": "assistant", "content": assistant_message})
-
-    if image is not None:
-        image = image.resize((250, 250))
-        # Convert the image to base64
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        image_bytes = buffered.getvalue()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-
-        # Create the data URL
-        image_url = f"data:image/png;base64,{image_base64}"
-
-        # Include the image URL and text message separately
-        messages.append({"role": "user", "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url
-                            },
-                        },
-                        {"type": "text", "text": prompt},
-                    ]})  # Image URL inside
-    else:
-        messages.append({"role": "user", "content": prompt})
-
-    response = client.chat.completions.create(
-        model=model, messages=messages, stream=True,
-        stop=["<|im_end|>", "###"]
-    )
-
-    full_response = ""  # Store the complete response
-    for chunk in response:
-        content = chunk.choices[0].delta.content
-        if content:
-            full_response += content
-
-    return full_response  # Return the complete response as a string
 
 JS = """function () {
   gradioURL = window.location.href
@@ -84,17 +41,18 @@ JS = """function () {
 }"""
 CSS = """
 """
-model = models[0]
-image = None
 
-def bot(prompt, history: list):
-    global image
-    global model
-    if image is not None:
-        image = image.resize((250, 250))
+def predict(prompt, history: list):
+    """Module:predict
+    
+    :param prompt: User message to the chatbot
+    :param history: List of messages
+    :returns: Chat responses"""
+    if demo.image is not None:
+        img = demo.image.resize((250, 250))
         # Convert the image to base64
         buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
+        img.save(buffered, format="PNG")
         image_bytes = buffered.getvalue()
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
 
@@ -113,28 +71,40 @@ def bot(prompt, history: list):
                     ]})  # Image URL inside
     else:
         history.append({"role": "user", "content": prompt})
-    from pprint import pprint
     pprint(history)
     response = client.chat.completions.create(
-        model=model, messages=history, stream=True,
+        model=demo.model, messages=history, stream=True,
         stop=["<|im_end|>", "###"]
     )
 
     history.append({"role": "assistant", "content": ""})
-    for chunk in response:
-        content = chunk.choices[0].delta.content
+    for tok in response: # pylint: disable=not-an-iterable
+        content = tok.choices[0].delta.content
         if content:
             history[-1]['content'] += content.replace('\n', '<br>')
-#            time.sleep(0.05)
             yield history[-1]
 
-with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True, fill_height=True, title="Local AI Chat - FindAImage") as demo:
+# from https://www.gradio.app/main/docs/gradio/chatinterface
+def vote(data: gr.LikeData):
+    """Module vote:
+    
+    :param data: gradio like data"""
+    if data.liked:
+        print("You upvoted this response: " + data.value[0])
+    else:
+        print("You downvoted this response: " + data.value[0])
+
+with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True,
+fill_height=True, title="Local AI Chat - FindAImage") as demo:
+    demo.model = models[0]
+    demo.image = None
     with gr.Row(equal_height=False):
         with gr.Column(scale=8):
             chat_interface = gr.ChatInterface(type="messages",
-                fn=bot,
+                fn=predict,
                 chatbot=gr.Chatbot(type="messages",
-                    height="calc(100vh - 120px)",
+                    height="calc(100vh - 140px)",
+                    show_copy_button=True,
                     placeholder="<strong>AI Chatbot</strong><br>Ask Me Anything"),
                 fill_height=True,
                 examples=[
@@ -143,6 +113,7 @@ with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True, fill_hei
                     "Describe this image in 10-50 words."
                 ]
             ).queue()
+            chat_interface.chatbot.like(vote, None, None)
 
         with gr.Column(scale=1):
             with gr.Row(equal_height=False):
@@ -165,23 +136,28 @@ with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True, fill_hei
         </div>
         """)
 
-        def update_model(x, y):
-            global model  # Use global to modify the outer scope variable
-            global image
-            model = x; image = y
+        def update_model(input_model, input_image):
+            """
+            Module: update_model(model, image)
+            
+            :model input_model: the model to chat with
+            :param input_image: an optional image to analyze
+            :returns: None
+            """
+            demo.model = input_model
+            demo.image = input_image
 
-        model_dropdown.change(
+        model_dropdown.change( # pylint: disable=no-member
             fn=update_model,
             inputs=[model_dropdown, image_input],
             outputs=None
         )
 
-        image_input.change(
+        image_input.change( # pylint: disable=no-member
             fn=update_model,
             inputs=[model_dropdown, image_input],
             outputs=None
         )
-
 
 if __name__ == "__main__":
     demo.launch()

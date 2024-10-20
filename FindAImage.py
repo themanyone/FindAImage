@@ -349,7 +349,7 @@ def describe_image(filename):
             messages=[
                 {
                     "role": "user",
-                    "content": f"{prompt} Re. image with file ID: {file_id}" 
+                    "content": f"{prompt} Re. image with file ID: {file_id}"
                 }
             ]
         )
