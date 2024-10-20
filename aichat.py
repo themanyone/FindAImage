@@ -7,7 +7,6 @@ import io
 import base64
 from pprint import pprint
 import gradio as gr
-# from PIL import Image
 from openai import OpenAI
 
 LICENSE = """    AI Chat Interface

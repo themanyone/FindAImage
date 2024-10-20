@@ -1,23 +1,30 @@
 #!/usr/bin/python
-from flask import Flask, send_from_directory, render_template_string, jsonify
+"""Module: AI Image Gallery
+Description: Create searchable photo albums and online image portfolios
+with the help of AI.
+License: Copyright (C) 2024 Henry F Kroll III, see LICENSE
+"""
 import io
-import os, sys
+import os
+import sys
 import base64
-import urllib.parse
 from PIL import Image
-from openai import OpenAI
-client = OpenAI()
+from flask import Flask, send_from_directory, render_template_string, jsonify
 import google.generativeai as genai
-app = Flask(__name__)
+from openai import OpenAI
 from figs import parse_html
 from xmp import get_keywords
 
-ai_model = 'lorem' # default to lorem ipsum
+client = OpenAI()
+app = Flask(__name__)
+IMAGE_FOLDER="."
+app.model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp endpoint
 LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
 # Discover llava models to show in dropdown box
-models = [model.id for model in lclient.models.list() if "llava" in model.id or "vision" in model.id]
+models = [model.id for model in lclient.models.list()
+    if "llava" in model.id or "vision" in model.id]
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -26,12 +33,15 @@ genai.configure(api_key=GEMINI_API_KEY)
 # Configure OpenAI
 gpt_key = os.getenv("OPENAI_API_KEY")
 OpenAI.api_key = gpt_key
-# Fill collection with existing captions / EXIF XMP keywords
-figures_collection = {}
 
 @app.route('/')
 def gallery():
-    global figures_collection, keywords
+    """Module: gallery: Generate the portfolio builder page
+    
+    :inputs: None
+    :outputs: None"""
+    # Fill collection with existing captions / EXIF XMP keywords
+    figures_collection = {}
     # Get captions (figures_collection) from index.html, if it exists
     index_path = os.path.join(IMAGE_FOLDER, 'index.html')
     image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.endswith(('.png', '.jpg', '.jpeg'))]
@@ -281,45 +291,49 @@ def gallery():
 
 @app.route('/model/<ai>')
 def model_switch(ai):
-    global ai_model
-    ai_model = ai
-    print("AI model switched to " + ai_model)
+    """Module: model_switch: switch model using dropdown from web page"""
+    app.model = ai
+    print("AI model switched to " + app.model)
     return ai
 
 @app.route('/describe/<filename>')
 def describe_image(filename):
-    print(f"Generating caption with {ai_model} model")
-    if ai_model == 'lorem':
-        return jsonify({"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor."})
+    """Module: describe_image: generate image descriptions
+    
+    :param filename: name of image file to analyze
+    :returns: image description JSON"""
+    print(f"Generating caption with {app.model} model")
+    if app.model == 'lorem':
+        return jsonify({"description":
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. "+
+"Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, "+
+"dolor."})
 
-    image_path = os.path.join(IMAGE_FOLDER, filename);
+    image_path = os.path.join(IMAGE_FOLDER, filename)
     prompt = "Describe this image in 10-50 words."
-    if GEMINI_API_KEY and ai_model == 'gemini':
+    if GEMINI_API_KEY and app.model == 'gemini':
         # temporarily uploads the image to google
         myfile = genai.upload_file(image_path)
         model = genai.GenerativeModel("gemini-1.5-flash")
         try:
-            result = model.generate_content(
+            response = model.generate_content(
                 [myfile, "\n\n", prompt]
             )
-            return jsonify({"description": f"{result.text}"})
+            return jsonify({"description": f"{response.text}"})
         except ValueError as ve:
             return jsonify({"description": f"{ve}"})
-    elif ai_model in models:
-        global lclient
-        pic = Image.open(image_path)
-        image = pic.resize((250, 250))
+    elif app.model in models:
+        image = Image.open(image_path).resize((250, 250))
         # Convert the image to base64
         buffered = io.BytesIO()
         image.save(buffered, format="PNG")
-        image_bytes = buffered.getvalue()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
         # Create the data URL
         image_url = f"data:image/png;base64,{image_base64}"
 
         response = lclient.chat.completions.create(
-            model = ai_model,
+            model = app.model,
             messages=[
                {"role": "user", "content": [
                         {
@@ -334,12 +348,10 @@ def describe_image(filename):
             stop=["<|im_end|>", "###"]
         )
         return jsonify({"description": response.choices[0].message.content})
-    elif ai_model == 'openai' and gpt_key:
-        # FIXME: This OpenAI code might not work, & subscription expired
+    elif app.model == 'openai' and gpt_key:
         # Upload the image to OpenAI
-        global client
-        with open(image_path, "rb") as image_file:
-            file_response = client.files.create(file=image_file,
+        with open(image_path, "rb") as image:
+            file_response = client.files.create(file=image,
             purpose='vision')
         file_id = file_response.id
 
@@ -353,22 +365,22 @@ def describe_image(filename):
                 }
             ]
         )
-        description = response.choices[0].message.content
-        return jsonify({"description": description})
+        return jsonify({"description": response.choices[0].message.content})
     return jsonify({"description": "no response"})
 
 @app.route('/images/<filename>')
 def image_file(filename):
+    """Module: image_file: Retrieve local image from flask"""
     return send_from_directory(IMAGE_FOLDER, filename)
 
 if __name__ == '__main__':
-    host = "http://localhost"
-    port = 9165
-    print(f"Starting server on {host}:{port}")
+    HOST = "http://localhost"
+    PORT = 9165
+    print(f"Starting server on {HOST}:{PORT}")
     if len(sys.argv) >= 2:
         IMAGE_FOLDER = sys.argv[1]
     else:
         IMAGE_FOLDER = '.'
     print(f"Image folder is {IMAGE_FOLDER}")
 #    webbrowser.open(f"{host}:{port}")
-    app.run(debug=True, port=port)
+    app.run(debug=True, port=PORT)

@@ -72,7 +72,7 @@ We set up a `llama.cfg` that includes a link to our model. If you add other mode
 }
 ```
 
-Then we make sure `AImages.py` matches the configuration we set up. If you change the above `port`, also change `LLAVA_ENDPOINT` in `FindAImage.py`. We're using port 8087 for these examples for no particular reason.
+Then we make sure `AImages.py` matches the configuration we set up. If you change the above `port`, also change `LLAVA_ENDPOINT` in `album_create.py`. We're using port 8087 for these examples for no particular reason.
 
 ```shell
 ...
@@ -97,7 +97,7 @@ For best results,
 
 Once `llama-cpp-python` is set up and running, and cofigured with some models, you can test captioning photos in the memes directory. This will create a server to host the photo album builder. The builder then creates a web page that will be the photo album.
 
-`./FindAImage.py memes`
+`./album_create.py memes`
 
 You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or type it into your browser. Monitor memory usage with `nvtop`.
 
@@ -119,7 +119,7 @@ Copy the saved `index.html` back to the directory where the images are. Launch i
 Now try making portfolios out of other image folders.
 
 ```shell
-./FindAImage.py ~/Pictures/2024
+./album_create.py ~/Pictures/2024
 ```
 
 ## Bonus Chat
