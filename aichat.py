@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import io
+import time
 import base64
 import gradio as gr
 from PIL import Image
@@ -82,52 +83,105 @@ JS = """function () {
   }
 }"""
 CSS = """
-.contain { display: flex; flex-direction: column; }
-.gradio-container { height: 100vh !important; }
-body { height: 100%; }
-#component-1,#component-2 { height: 100% !important; }
-#chatbot { flex-grow: 1; overflow: auto;}
 """
+model = models[0]
+image = None
 
-with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_height=True, title="Local AI Chat - FindAImage") as demo:
+def bot(prompt, history: list):
+    global image
+    global model
+    if image is not None:
+        image = image.resize((250, 250))
+        # Convert the image to base64
+        buffered = io.BytesIO()
+        image.save(buffered, format="PNG")
+        image_bytes = buffered.getvalue()
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+        # Create the data URL
+        image_url = f"data:image/png;base64,{image_base64}"
+
+        # Include the image URL and text message separately
+        history.append({"role": "user", "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url
+                            },
+                        },
+                        {"type": "text", "text": prompt},
+                    ]})  # Image URL inside
+    else:
+        history.append({"role": "user", "content": prompt})
+    from pprint import pprint
+    pprint(history)
+    response = client.chat.completions.create(
+        model=model, messages=history, stream=True,
+        stop=["<|im_end|>", "###"]
+    )
+
+    history.append({"role": "assistant", "content": ""})
+    for chunk in response:
+        content = chunk.choices[0].delta.content
+        if content:
+            history[-1]['content'] += content.replace('\n', '<br>')
+#            time.sleep(0.05)
+            yield history[-1]
+
+with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True, fill_height=True, title="Local AI Chat - FindAImage") as demo:
     with gr.Row(equal_height=False):
-        with gr.Column(scale=5):
-            chat_interface = gr.ChatInterface(
-                fn=lambda message, history: predict(message, history, model_dropdown.value, image_input.value),  # Pass the selected model and image
+        with gr.Column(scale=8):
+            chat_interface = gr.ChatInterface(type="messages",
+                fn=bot,
+                chatbot=gr.Chatbot(type="messages",
+                    height="calc(100vh - 120px)",
+                    placeholder="<strong>AI Chatbot</strong><br>Ask Me Anything"),
                 fill_height=True,
                 examples=[
                     "What is the capital of France?",
                     "Who was the first person on the moon?",
-                    "Describe this image in 10-50 words.",
-                ],
-            )
+                    "Describe this image in 10-50 words."
+                ]
+            ).queue()
 
         with gr.Column(scale=1):
-            model_dropdown = gr.Dropdown(
-                choices=models,
-                label="Select Model",
-                value=models[0],
-                interactive=True
-            )
-            # Add an image upload component
-            image_input = gr.Image(type="pil", label="Upload Image", interactive=True)
+            with gr.Row(equal_height=False):
+                # Select model
+                model_dropdown = gr.Dropdown(
+                    choices=models, label="Select Model", value=models[0],
+                    min_width=320, interactive=True
+                )
+                # Add an image upload component
+                image_input = gr.Image(type="pil", label="Upload Image",
+                min_width=320, interactive=True)
 
+                html_output = gr.HTML("""
+        <div style='height: 100%; background: #234; padding: 20px; color: white; text-align: center;'>
+        <p>
+            <a style="color: white" href="https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG">Support further development</a>
+        </p><p>
+            <a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html">LICENSE</a>
+        </p>
+        </div>
+        """)
 
-    # Connect the model_dropdown to the chat_interface
-    def update_chatbot(model, image=None):
-        chat_interface.fn = lambda message, history: predict(message, history, model, image)
+        def update_model(x, y):
+            global model  # Use global to modify the outer scope variable
+            global image
+            model = x; image = y
 
-    model_dropdown.change(
-        fn=update_chatbot,
-        inputs=[model_dropdown, image_input],
-        outputs=None
-    )
+        model_dropdown.change(
+            fn=update_model,
+            inputs=[model_dropdown, image_input],
+            outputs=None
+        )
 
-    image_input.change(
-        fn=update_chatbot,
-        inputs=[model_dropdown, image_input],
-        outputs=None
-    )
+        image_input.change(
+            fn=update_model,
+            inputs=[model_dropdown, image_input],
+            outputs=None
+        )
+
 
 if __name__ == "__main__":
     demo.launch()
