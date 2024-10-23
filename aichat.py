@@ -33,12 +33,35 @@ client = OpenAI(base_url="http://localhost:8087/v1", api_key="llama.cpp")
 models = [model.id for model in client.models.list()]
 
 JS = """function () {
-  gradioURL = window.location.href
-  if (!gradioURL.endsWith('?__theme=dark')) {
-    window.location.replace(gradioURL + '?__theme=dark');
+  document.addEventListener('keyup', function(e) {
+    if (e.keyCode === 32) {
+      document.execCommand('insertHTML', false, ' ');
+    }
+  });
+  window.makeEditable = function(){
+    document.querySelectorAll('.chatbot').forEach(function(element) {
+      element.contentEditable = 'true';
+      var pe = element.parentElement.parentElement.parentElement;
+      var ns = pe.parentElement.nextElementSibling.firstElementChild;
+      if (ns.lastElementChild.name != 'ChatThis') {
+          var button = document.createElement('button');
+          button.textContent = 'Submit';
+          button.name = 'ChatThis';
+          button.onclick = function() {
+            var content = element.innerText;
+            // Submit the content using AJAX or a form
+            var ic = document.querySelector('.input-container');
+            ic.firstElementChild.value += content;
+            console.log(content);
+          };
+          ns.appendChild(button);
+       }
+    });
   }
-}"""
+}
+"""
 CSS = """
+
 """
 
 def predict(prompt, history: list):
@@ -157,6 +180,16 @@ fill_height=True, title="Local AI Chat - FindAImage") as demo:
             inputs=[model_dropdown, image_input],
             outputs=None
         )
+
+    gr.on(
+        triggers=[chat_interface.chatbot.select],
+        fn=lambda : None,
+        inputs=None,
+        outputs=None,
+        js="""function(){
+          makeEditable();
+        }"""
+    )
 
 if __name__ == "__main__":
     demo.launch()
