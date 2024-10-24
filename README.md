@@ -124,7 +124,9 @@ Now try making portfolios out of other image folders.
 
 ## Bonus Chat
 
-When done making captions for images, try out `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with the local LLMs you downloaded, upload images (for models that support them), read and translate text in the images, or ask questions about them.
+Test your `llama-cpp-python` configuration with `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with the local LLMs you downloaded, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
+
+**Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
 
 ![chat](chat.png)
 
