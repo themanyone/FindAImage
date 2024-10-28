@@ -41,7 +41,7 @@ JS = """function () {
   window.makeEditable = function(){
     document.querySelectorAll('.chatbot').forEach(function(element) {
       codes = element.querySelectorAll('code');
-      codes.forEach(e=>{e.innerText = e.innerText.replaceAll('<br>', '<br>');});
+      codes.forEach(e=>{e.innerText = e.innerText.replaceAll('<br>', '\\n');});
       element.contentEditable = 'true';
       var pe = element.parentElement.parentElement.parentElement;
       var ns = pe.parentElement.nextElementSibling.firstElementChild;
