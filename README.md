@@ -45,6 +45,8 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is a good way to generate captions, avoid censorship, and keep everything private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the OpenAI Compatible Web Server using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
 
+**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora 41, and build llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora 41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
+
 We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM. [Get models from here](https://huggingface.co/hellork).
 
 ```shell
@@ -347,6 +349,7 @@ Well, that's it. We built `llama.cpp`, downloaded a llava model, made some scrip
     - YouTube https://www.youtube.com/themanyone
     - Mastodon https://mastodon.social/@themanyone
     - Linkedin https://www.linkedin.com/in/henry-kroll-iii-93860426/
+    - Buy me a coffee https://buymeacoffee.com/isreality
     - [TheNerdShow.com](http://thenerdshow.com/)
 
-Copyright (C) 2024 Henry Kroll III, www.thenerdshow.com. See [LICENSE](LICENSE) for details.
+Copyright (C) 2024-2025 Henry Kroll III, www.thenerdshow.com. See [LICENSE](LICENSE) for details.

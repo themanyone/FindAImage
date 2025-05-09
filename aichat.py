@@ -2,7 +2,7 @@
 """Module: AI Chat Interface
 Description: This module defines the interface and server for an artificial 
 intelligence-powered chat system. It features image queries and a rating system in 
-addition to the usual chat functions."""
+addition to the usual chat functions. This interface is different in that the resulting chat text is editable. Just click on it a couple times."""
 import io
 import base64
 from pprint import pprint
@@ -163,13 +163,14 @@ fill_height=True, title="Local AI Chat - FindAImage") as demo:
         def update_model(input_model, input_image):
             """
             Module: update_model(model, image)
-            
+
             :model input_model: the model to chat with
             :param input_image: an optional image to analyze
             :returns: None
             """
             demo.model = input_model
             demo.image = input_image
+            return None
 
         model_dropdown.change( # pylint: disable=no-member
             fn=update_model,
