@@ -90,10 +90,11 @@ Then we make sure `AImages.py` matches the configuration we set up. If you chang
 ```
 
 For best results,
-- start server with  `--config_file=llama.cfg`,
 - download several `.gguf` [models from here](https://huggingface.co/hellork),
 - populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python),
 - and have at least one llava model for images.
+- Start server with  `python3 -m llama_cpp.server --config_file=llama.cfg`.
+- Launch app with `python3 aichat.py`
 
 ## Photo Album Builder
 
@@ -134,7 +135,7 @@ Test your `llama-cpp-python` configuration with `aichat.py`. It starts a chat se
 
 # Linux Tutorial
 
-This section is no longer required, but recommended. Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
+**This section is no longer required.** Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
 
 Install at least tidy. For documentation, consider also installing `pinfo`.
 
