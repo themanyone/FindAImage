@@ -56,27 +56,33 @@ First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to the
 installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora
 41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
 
-## Start the Server
+## Start Multimodal Server with < 4GiB VRAM
 
 We are using a different port than normal for this dedicated server. Humor us here.
 
-Multimodal text & image (-hf will automatically download models, about 3GiB).
+Text & image (Downloads IQ4_NL quantized model, about 3GiB).
 
 `llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087`
 
-Multimodal text & audio (just over 2GiB download).
+Text & audio (just over 2GiB download).
 
 `llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087`
 
-Multimodal text & video (low quality iq2_xs but might work with 4GiB).
+Combined text, image & audio input (3.5GiB download).
 
-`llama-server -ngl 16 -hf Mungert/SkyCaptioner-V1-GGUF:iq2_xs --port 8087`
+`llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087`
 
-## Start the Client to Test
+[Multimodal text & video](https://huggingface.co/Mungert/SkyCaptioner-V1-GGUF) (Video may not be supported by llama-server yet but link has good info & scripts).
+
+## Start Chat Server to Test
 
 `python aichat.py`
 
-This starts a chat server (yes, yet another server) so anyone on your wifi can select and chat with `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
+This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with the above model hosted by `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
+
+**Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
+
+![chat](chat.png)
 
 ## Photo Album Builder
 
@@ -88,7 +94,7 @@ You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or
 
 The link might look something like this. `http://localhost:9165`
 
-If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will use those.
+If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will display those.
 
 **Supervise children.** Be aware that these models are under active development. Their 
 output, though usually fine, *may not always be safe* for all ages.
@@ -101,19 +107,11 @@ Once you open the web page, you can
 
 Copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images.
 
-Now try making portfolios out of other image folders.
+Now try making albums/portfolios in your other image folders.
 
 ```shell
 ./album_create.py ~/Pictures/2024
 ```
-## Bonus Chat
-
-Test your `llama-cpp-python` configuration with `aichat.py`. 
-
-
-**Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
-
-![chat](chat.png)
 
 # Linux Tutorial
 
