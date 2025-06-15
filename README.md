@@ -1,14 +1,16 @@
 # FindAImage
 
-Using AI image descriptions to organize the meme portfolio.
+Uses AI image descriptions to create an organized photo album, portfolio, or meme page.
 
- * Simple utility. Search photos in browser.
+ * Simple utility. Search local photos in browser.
  * Offline and private. Optionally use OpenAI or Google.
  * Internet-ready. Can publish album as a website.
  * Light wight. Does not require torch. 4GiB VRAM.
  * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ![preview](preview.png)
+
+**New**. Also includes a chat interface that supports multimodal text, images, and audio input.
 
 Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes and photos to find the right one for every occasion.
 
@@ -43,62 +45,42 @@ export OPENAI_API_KEY=<my API key>
 
 ## Local LLAVA server
 
-A local server is a good way to generate captions, avoid censorship, and keep everything private. [Install llama-cpp-python](https://github.com/abetlen/llama-cpp-python). If you already cloned `llama.cpp`, you can make a link to it under `llama-cpp-python/vendors` to avoid downloading it twice. Build the OpenAI Compatible Web Server using acceleration like CUDA or VULKAN, if possible. Look to the tutorial below for additional instructions on finding and downloading a LLAVA model for it.
+A local server is a good way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
 
-**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora 41, and build llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora 41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
+[llama-cpp-python](https://github.com/abetlen/llama-cpp-python) used to be recommended here. It provides the ability to choose which model to use from the client-side interface page. But it is in development and may need updates to work with the latest `llama.cpp`. If you want to contribute, by all means, have at it. Otherwise, we're just going to run `llama-server` directly.
 
-We set up a `llama.cfg` that includes a link to our model. If you add other models, just make sure the `model_alias` contains 'vision' or 'llava' so we can identify it as a vision model. Increase `n_gpu_layers` if there is enough VRAM. [Get models from here](https://huggingface.co/hellork).
+First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to the instructions. Compile it with the type of acceleration that supports your hardware, if possible. We use CUDA for our Nvidia GPU cards.
 
-```shell
-{
-    "host": "0.0.0.0",
-    "port": 8087,
-    "root_path": "/completion",
-    "models": [
-        {
-            "model": "/home/k/.local/share/models/llava-phi-3-mini-int4.gguf",
-            "model_alias": "llava-phi-3",
-            "chat_format": "llava-1-5",
-            "clip_model_path":
-"/home/k/.local/share/models/llava-phi-3-mini-mmproj-f16.gguf",
-            "n_gpu_layers": 7,
-            "offload_kqv": true,
-            "n_threads": 7,
-            "n_batch": 512,
-            "n_ctx": 1024
-        },
-        
-...
-        
-    ]
-}
-```
+**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora
+41, and build llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if
+installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora
+41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
 
-Then we make sure `AImages.py` matches the configuration we set up. If you change the above `port`, also change `LLAVA_ENDPOINT` in `album_create.py`. We're using port 8087 for these examples for no particular reason.
+## Start the Server
 
-```shell
-...
-    elif ai_model == 'local':
-        lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
-        # This uses the self-hosted path, which should be okay if the server
-        # is on the same machine or network.
-        url = f"{host}:{port}/images/{filename}"
-        print(url)
-        response = lclient.chat.completions.create(
-            model = "llava-phi-3",
-            messages=[
-```
+We are using a different port than normal for this dedicated server. Humor us here.
 
-For best results,
-- download several `.gguf` [models from here](https://huggingface.co/hellork),
-- populate `llama.cfg` as in [docs](https://github.com/abetlen/llama-cpp-python),
-- and have at least one llava model for images.
-- Start server with  `python3 -m llama_cpp.server --config_file=llama.cfg`.
-- Launch app with `python3 aichat.py`
+Multimodal text & image (-hf will automatically download models, about 3GiB).
+
+`llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087`
+
+Multimodal text & audio (just over 2GiB download).
+
+`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087`
+
+Multimodal text & video (low quality iq2_xs but might work with 4GiB).
+
+`llama-server -ngl 16 -hf Mungert/SkyCaptioner-V1-GGUF:iq2_xs --port 8087`
+
+## Start the Client to Test
+
+`python aichat.py`
+
+This starts a chat server (yes, yet another server) so anyone on your wifi can select and chat with `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
 
 ## Photo Album Builder
 
-Once `llama-cpp-python` is set up and running, and cofigured with some models, you can test captioning photos in the memes directory. This will create a server to host the photo album builder. The builder then creates a web page that will be the photo album.
+Once `llama-cpp-python` is set up and running, and configured with multimodal text & image, you can test captioning photos in the memes directory. This will create a server to host the photo album builder. The builder then creates a web page that will be the photo album.
 
 `./album_create.py memes`
 
@@ -124,10 +106,10 @@ Now try making portfolios out of other image folders.
 ```shell
 ./album_create.py ~/Pictures/2024
 ```
-
 ## Bonus Chat
 
-Test your `llama-cpp-python` configuration with `aichat.py`. It starts a chat server so anyone on your wifi can select and chat with the local LLMs you downloaded, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
+Test your `llama-cpp-python` configuration with `aichat.py`. 
+
 
 **Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
 
