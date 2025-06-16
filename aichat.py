@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """Module: AI Chat Interface
 Description: This module defines the interface and server for an artificial 
 intelligence-powered chat system. It features image and audio queries and a rating 
@@ -35,9 +35,6 @@ client = OpenAI(base_url="http://localhost:8087/v1", api_key="llama.cpp")
 
 # Get available models initially
 models = [model.id for model in client.models.list()]
-# Ensure Ultravox model is included; adjust if necessary
-if "ultravox-v0_5-llama-3_2-1b" not in models:
-    models.append("ultravox-v0_5-llama-3_2-1b")
 
 JS = """function () {
   document.addEventListener('keyup', function(e) {
