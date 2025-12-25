@@ -55,7 +55,7 @@ First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to the
 
 ## Start Multimodal Server with < 4GiB VRAM
 
-We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
+If you have more VRAM, just remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
 Text & image (Downloads IQ4_NL quantized model, about 3GiB).
 
@@ -75,7 +75,7 @@ Combined text, image & audio input (3.5GiB download).
 
 `python aichat.py`
 
-This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with the above model hosted by `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them.
+This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with the above model hosted by `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them. The omni model may be prompted with text, audio, and images simultaneously.
 
 **Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
 

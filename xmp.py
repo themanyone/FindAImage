@@ -1,9 +1,17 @@
 #!/usr/bin/python
 import sys
 import os
-import exiftool
+
+try:
+    import exiftool
+    EXIFTOOL_AVAILABLE = True
+except ImportError:
+    EXIFTOOL_AVAILABLE = False
 
 def get_keywords(image_path):
+    if not EXIFTOOL_AVAILABLE:
+        print("Warning: exiftool module not available. Cannot extract keywords.")
+        return None
     try:
         with exiftool.ExifToolHelper() as et:
             metadata = et.get_metadata(image_path)[0]
@@ -15,6 +23,9 @@ def get_keywords(image_path):
         print(f"Error: {str(e)}")
 
 def get_custom_metadata(image_path):
+    if not EXIFTOOL_AVAILABLE:
+        print("Warning: exiftool module not available. Cannot extract custom metadata.")
+        return
     try:
         with exiftool.ExifToolHelper() as et:
             metadata = et.get_metadata(image_path)[0]

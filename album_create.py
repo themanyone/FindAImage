@@ -24,7 +24,7 @@ LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
 # Discover llava models to show in dropdown box
 models = [model.id for model in lclient.models.list()
-    if "llava" in model.id or "vision" in model.id]
+    if "llava" in model.id or "vision" in model.id or "Omni" in model.id]
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
