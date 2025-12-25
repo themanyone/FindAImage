@@ -165,12 +165,12 @@ with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True,
     with gr.Row(equal_height=False):
         with gr.Column(scale=8):
             chat_interface = gr.ChatInterface(
-                type="messages",
+#                type="messages",
                 fn=predict,
                 chatbot=gr.Chatbot(
-                    type="messages",
+#                    type="messages",
                     height="calc(100vh - 140px)",
-                    show_copy_button=True,
+#                    show_copy_button=True,
                     placeholder="<strong>AI Chatbot</strong><br>Ask Me Anything"
                 ),
                 fill_height=True,

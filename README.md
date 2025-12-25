@@ -47,18 +47,15 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is a good way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
 
-[llama-cpp-python](https://github.com/abetlen/llama-cpp-python) used to be recommended here. It provides the ability to choose which model to use from the client-side interface page. But it is in development and may need updates to work with the latest `llama.cpp`. If you want to contribute, by all means, have at it. Otherwise, we're just going to run `llama-server` directly.
+[llama-cpp-python](https://github.com/abetlen/llama-cpp-python) has an option to configure an OpenAI-compatible [server] with the ability to choose which model to use from our drop-down menus. Getting it to work with CUDA is complicated. It's well worth building, though. But to keep these instructions simple, you may skip ahead and run `llama-server` directly.
 
 First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to the instructions. Compile it with the type of acceleration that supports your hardware, if possible. We use CUDA for our Nvidia GPU cards.
 
-**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora
-41, and build llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if
-installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora
-41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
+**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora 41, and build llama.cpp and llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora 41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
 
 ## Start Multimodal Server with < 4GiB VRAM
 
-We are using a different port than normal for this dedicated server. Humor us here.
+We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
 Text & image (Downloads IQ4_NL quantized model, about 3GiB).
 
