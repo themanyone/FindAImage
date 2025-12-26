@@ -187,6 +187,8 @@ def gallery():
           <circle cx="14" cy="14" r="12" />
           <path d="M23 23 L30 30" />
         </svg>
+    <!-- AI Caption All: caption all visible media using the selected AI model -->
+    <a class="button" id="ai_caption_all" title="Caption all media on this page using AI">AI Caption All</a>
     <a class="button" id="download">Save Gallery</a></div>
     <a style="position:absolute; right:5px; top:5px;" href="https://github.com/themanyone/FindAImage">FindAImage</a>
     </header>
@@ -194,7 +196,7 @@ def gallery():
             <figure style="float: left; margin: 10px;" title="{{ image }}">
                 <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}" style="width: 320px;"><br>
                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
-            <a class="button" onclick="describeImage('{{ image }}')">Use AI</a></figure>
+            <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage('{{ image }}')">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
             <figure style="float: left; margin: 10px;" title="{{ audio }}">
@@ -202,7 +204,7 @@ def gallery():
                 <canvas class="waveform" id="wave_{{ audio.replace('.', '_') }}" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
                  <figcaption onClick="blank(this)" contenteditable="true" id="{{ audio.replace('.', '_') }}">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
                  <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
-                 <a class="button ai-audio" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
+                 <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
              </figure>
          {% endfor %}
     <script>
@@ -215,36 +217,73 @@ def gallery():
         }
         switch_ai(document.getElementById('ai').value);
         function describeImage(imageName) {
-            success = false;
-            ele = document.getElementById(imageName.replace('.', '_'))
-            ele.nextElementSibling.innerText='Please Wait...'
-            window.setTimeout(()=>{if(!success){
-                ele.nextElementSibling.innerText='Try Again';
-            }}, 20000);
-            fetch('/describe/' + imageName)
-                .then(response => response.json())
-                .then(data => {
-                    ele.textContent = data.description;
-                    success = true;
-                    ele.nextElementSibling.innerText='Re-Caption This Image'
-                });
-        }
-        function describeAudio(audioName) {
-            success = false;
-            ele = document.getElementById(audioName.replace('.', '_'));
-            // Button is the next sibling of figcaption (same pattern as images)
-            if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Please Wait...';
-            window.setTimeout(()=>{if(!success){
-                if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Try Again';
-            }}, 20000);
-            fetch('/describe/' + audioName)
+            let success = false;
+            const ele = document.getElementById(imageName.replace('.', '_'));
+            const btn = ele ? ele.nextElementSibling : null;
+            if (btn) btn.innerText = 'Please Wait...';
+            const to = setTimeout(()=>{ if(!success && btn) btn.innerText = 'Try Again'; }, 20000);
+            return fetch('/describe/' + imageName)
                 .then(response => response.json())
                 .then(data => {
                     if (ele) ele.textContent = data.description;
                     success = true;
-                    if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Re-Caption This Audio';
+                    if (btn) btn.innerText = 'Re-Caption This Image';
+                    clearTimeout(to);
+                    return data;
+                })
+                .catch(err => {
+                    if (btn) btn.innerText = 'Error';
+                    clearTimeout(to);
+                    throw err;
                 });
         }
+        function describeAudio(audioName) {
+            let success = false;
+            const ele = document.getElementById(audioName.replace('.', '_'));
+            const btn = ele ? ele.nextElementSibling : null;
+            if (btn) btn.innerText = 'Please Wait...';
+            const to = setTimeout(()=>{ if(!success && btn) btn.innerText = 'Try Again'; }, 20000);
+            return fetch('/describe/' + audioName)
+                .then(response => response.json())
+                .then(data => {
+                    if (ele) ele.textContent = data.description;
+                    success = true;
+                    if (btn) btn.innerText = 'Re-Caption This Audio';
+                    clearTimeout(to);
+                    return data;
+                })
+                .catch(err => {
+                    if (btn) btn.innerText = 'Error';
+                    clearTimeout(to);
+                    throw err;
+                });
+        }
+        // Caption all visible media sequentially using currently selected AI
+        async function aiCaptionAll() {
+            const control = document.getElementById('ai_caption_all');
+            if (!control) return;
+            const original = control.innerText;
+            control.disabled = true;
+            control.innerText = 'Captioning...';
+            const items = Array.from(document.querySelectorAll('.ai-button'));
+            for (const item of items) {
+                // skip hidden buttons
+                if (item.offsetParent === null) continue;
+                const type = item.dataset.type;
+                const fname = item.dataset.filename;
+                try {
+                    if (type === 'audio') await describeAudio(fname);
+                    else await describeImage(fname);
+                } catch (e) {
+                    console.log('AI caption error', e);
+                }
+                // small delay between items
+                await new Promise(r => setTimeout(r, 500));
+            }
+            control.innerText = 'Done';
+            setTimeout(()=> { control.innerText = original; control.disabled = false; }, 1500);
+        }
+        document.getElementById('ai_caption_all').addEventListener('click', aiCaptionAll);
         function blank(e){
             if (e.innerHTML=="Click to add searchable caption..."){
                 e.innerHTML = "";
