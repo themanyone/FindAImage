@@ -1,18 +1,20 @@
 # FindAImage
 
-Uses AI image descriptions to create an organized photo album, portfolio, or meme page.
+Use AI image descriptions to build organized photo albums, multimedia portfolios, and meme pages.
 
- * Simple utility. Search local photos in browser.
+ * Simple utility. Creates searchable media captions, in browser.
  * Offline and private. Optionally use OpenAI or Google.
- * Internet-ready. Can publish album as a website.
+ * Internet-ready. Can publish album/portfolio as a website.
  * Light wight. Does not require torch. 4GiB VRAM.
  * Free and open-source. NO WARRANTIES. See LICENSE.
 
 ![preview](preview.png)
 
-**New**. Also includes a chat interface that supports multimodal text, images, and audio input.
+Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes, photos, and audio clips to find the right one for every occasion.
 
-Who doesn't have a folder of their favorite memes? But it becomes tedious scrolling through pages and pages of memes and photos to find the right one for every occasion.
+**New Features.**
+* Omni support - Generate AI captions for audio files as well as images.
+* `aichat.py` server - supports multimodal text, image, and audio input.
 
 Enjoying it so far, or want more features? [Support development.](https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG) (PayPal donation link).
 
@@ -27,11 +29,18 @@ Or, if it's already downloaded, `git pull`.
 
 ## Python Dependencies
 
-`pip install -r requirements.txt`
+To keep requirements from potentially messing up your default python setup, you might want to install and use `uv` to create a virtual environment.
+
+```shell
+sudo dnf -y install uv
+uv venv -p python3.13 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
 
 ## Optional ChatGPT from OpenAI
 
-Export `OPENAI_API_KEY` to enable ChatGPT. Edit `.bashrc`, or another startup file:
+Export `OPENAI_API_KEY` to enable ChatGPT. Edit `.bashrc`, or another startup file to make it permanent.
 
 ```shell
 export OPENAI_API_KEY=<my API key>
@@ -45,29 +54,27 @@ export OPENAI_API_KEY=<my API key>
 
 ## Local LLAVA server
 
-A local server is a good way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
+A local server is our preferred way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
 
 [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) has an option to configure an OpenAI-compatible [server] with the ability to choose which model to use from our drop-down menus. Getting it to work with CUDA is complicated. It's well worth building, though. But to keep these instructions simple, you may skip ahead and run `llama-server` directly.
 
-First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to the instructions. Compile it with the type of acceleration that supports your hardware, if possible. We use CUDA for our Nvidia GPU cards.
+First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their instructions. Compile it with the type of acceleration that supports your hardware, if possible. Prefer CUDA for Nvidia GPU cards.
 
-**Fedora 42.** is not CUDA-supported. But we figured it out! You can install CUDA for Fedora 41, and build llama.cpp and llama-cpp-python by removing compatability versions of gcc14, gcc14-c++, if installed. And sourcing gcc13-13.3.1-2.fc41.1 and gcc13-c++-13.3.1-2.fc41.1 rpms from Fedora 41 repos [as described here](https://github.com/themanyone/whisper_dictation#Preparation).
+## Start LLAVA Server
 
-## Start Multimodal Server with < 4GiB VRAM
+If you have more than 4GB VRAM, you can remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
-If you have more VRAM, just remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
+Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
 
-Text & image (Downloads IQ4_NL quantized model, about 3GiB).
-
-`llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087`
+`llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087 -a "Qwen2.5-vision"`
 
 Text & audio (just over 2GiB download).
 
-`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087`
+`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087 -a "Ultravox-vision"`
 
-Omni models support combined text, image & audio input (3.5GiB download).
+**Omni models** support combined text, image & audio input.
 
-`llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087`
+`llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087 -a "Qwen2.5-Omni"`
 
 [Multimodal text & video](https://huggingface.co/Mungert/SkyCaptioner-V1-GGUF) (Video may not be supported by llama-server yet but link has good info & scripts).
 
@@ -83,7 +90,9 @@ This starts a chat server (yes, yet another server--a web server this time) so, 
 
 ## Photo Album Builder
 
-Once `llama-cpp-python` is set up and running, and configured with multimodal text & image, you can test captioning photos in the memes directory. This will create a server to host the photo album builder. The builder then creates a web page that will be the photo album.
+Once `llama-cpp-python` is set up and running, you can configure it to serve the above models. Or just keep using llama-server.
+ 
+Test captioning photos in the memes directory. This will launch a server to host the photo album builder. The builder then creates a web page that will be the photo album or media portfolio.
 
 `./album_create.py memes`
 
