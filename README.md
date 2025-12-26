@@ -65,7 +65,7 @@ Text & audio (just over 2GiB download).
 
 `llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087`
 
-Combined text, image & audio input (3.5GiB download).
+Omni models support combined text, image & audio input (3.5GiB download).
 
 `llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087`
 
@@ -91,7 +91,9 @@ You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or
 
 The link might look something like this. `http://localhost:9165`
 
-If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will display those.
+If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will display those. (You must install LLavaImageTagger to make that work).
+
+When Omni model is selected, the photo album builder can also caption audio files!
 
 **Supervise children.** Be aware that these models are under active development. Their 
 output, though usually fine, *may not always be safe* for all ages.

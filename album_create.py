@@ -22,9 +22,11 @@ app.model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp endpoint
 LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
-# Discover llava models to show in dropdown box
+# Discover llava/vision/omni models to show in dropdown box (case-insensitive)
 models = [model.id for model in lclient.models.list()
-    if "llava" in model.id or "vision" in model.id or "Omni" in model.id]
+    if any(k in model.id.lower() for k in ("llava", "vision", "omni"))]
+# Lowercase set for case-insensitive checks
+models_lower = {m.lower() for m in models}
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -391,7 +393,7 @@ def describe_image(filename):
     is_audio = filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a'))
     prompt = "Describe this audio in 10-50 words." if is_audio else "Describe this image in 10-50 words."
 
-    if GEMINI_API_KEY and app.model == 'gemini':
+    if GEMINI_API_KEY and app.model.lower() == 'gemini':
         # temporarily uploads the file (image or audio) to google
         myfile = genai.upload_file(file_path)
         model = genai.GenerativeModel("gemini-1.5-flash")
@@ -402,7 +404,7 @@ def describe_image(filename):
             return jsonify({"description": f"{response.text}"})
         except ValueError as ve:
             return jsonify({"description": f"{ve}"})
-    elif app.model in models:
+    elif app.model.lower() in models_lower:
         # For audio files, encode raw bytes into input_audio content (base64 + format).
         if is_audio:
             with open(file_path, "rb") as f:
@@ -447,7 +449,7 @@ def describe_image(filename):
                 stop=["<|im_end|>", "###"]
             )
             return jsonify({"description": response.choices[0].message.content})
-    elif app.model == 'openai' and gpt_key:
+    elif app.model.lower() == 'openai' and gpt_key:
         if is_audio:
             # OpenAI chat/file handling for audio is not implemented here
             return jsonify({"description": "OpenAI audio analysis is not supported by this gallery interface."})
