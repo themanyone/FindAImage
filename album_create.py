@@ -189,20 +189,20 @@ def gallery():
     <a style="position:absolute; right:5px; top:5px;" href="https://github.com/themanyone/FindAImage">FindAImage</a>
     </header>
         {% for image in images %}
-            <figure style="float: left; margin: 10px;">
-                <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" style="width: 320px;"><br>
+            <figure style="float: left; margin: 10px;" title="{{ image }}">
+                <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}" style="width: 320px;"><br>
                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
             <a class="button" onclick="describeImage('{{ image }}')">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
-            <figure style="float: left; margin: 10px;">
-                <audio id="audio_{{ audio.replace('.', '_') }}" controls src="{{ url_for('media_file', filename=audio) }}" style="width: 320px;"></audio><br>
-                <canvas class="waveform" id="wave_{{ audio.replace('.', '_') }}" data-src="{{ url_for('media_file', filename=audio) }}" width="320" height="64"></canvas>
-                <figcaption onClick="blank(this)" contenteditable="true" id="{{ audio.replace('.', '_') }}">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
-                <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
-                <a class="button ai-audio" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
-            </figure>
-        {% endfor %}
+            <figure style="float: left; margin: 10px;" title="{{ audio }}">
+                <audio id="audio_{{ audio.replace('.', '_') }}" controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" style="width: 320px;"></audio><br>
+                <canvas class="waveform" id="wave_{{ audio.replace('.', '_') }}" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
+                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ audio.replace('.', '_') }}">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
+                 <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
+                 <a class="button ai-audio" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
+             </figure>
+         {% endfor %}
     <script>
         function switch_ai(val) {
             //console.log(val);
