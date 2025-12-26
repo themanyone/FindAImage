@@ -44,12 +44,14 @@ def gallery():
     figures_collection = {}
     # Get captions (figures_collection) from index.html, if it exists
     index_path = os.path.join(IMAGE_FOLDER, 'index.html')
-    image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.endswith(('.png', '.jpg', '.jpeg'))]
+    image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a'))]
     if os.path.isfile(index_path):
         figures_collection = parse_html(index_path)
     else:
-        for image in image_files:
-            figures_collection[image] = get_keywords(os.path.join(IMAGE_FOLDER, image))
+        # Populate captions / keywords for both images and audio files
+        for fname in image_files + audio_files:
+            figures_collection[fname] = get_keywords(os.path.join(IMAGE_FOLDER, fname))
     return render_template_string('''<head>
         <meta charset="UTF-8"><!--//
     AI Image Gallery.
@@ -74,6 +76,12 @@ def gallery():
         html {
             height: 100%;
             width: 100%;
+        }
+        .waveform {
+            display: block;
+            width: 320px;
+            height: 64px;
+            background: #222;
         }
         #root {
             height: 100%;
@@ -186,10 +194,22 @@ def gallery():
                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
             <a class="button" onclick="describeImage('{{ image }}')">Use AI</a></figure>
         {% endfor %}
+        {% for audio in audios %}
+            <figure style="float: left; margin: 10px;">
+                <audio id="audio_{{ audio.replace('.', '_') }}" controls src="{{ url_for('media_file', filename=audio) }}" style="width: 320px;"></audio><br>
+                <canvas class="waveform" id="wave_{{ audio.replace('.', '_') }}" data-src="{{ url_for('media_file', filename=audio) }}" width="320" height="64"></canvas>
+                <figcaption onClick="blank(this)" contenteditable="true" id="{{ audio.replace('.', '_') }}">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
+                <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
+                <a class="button ai-audio" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
+            </figure>
+        {% endfor %}
     <script>
         function switch_ai(val) {
             //console.log(val);
             fetch('/model/' + val)
+            // Show audio AI buttons only when Omni model is selected
+            const showAudioAI = (val || '').toLowerCase().includes('omni');
+            document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
         function describeImage(imageName) {
@@ -205,6 +225,22 @@ def gallery():
                     ele.textContent = data.description;
                     success = true;
                     ele.nextElementSibling.innerText='Re-Caption This Image'
+                });
+        }
+        function describeAudio(audioName) {
+            success = false;
+            ele = document.getElementById(audioName.replace('.', '_'));
+            // Button is the next sibling of figcaption (same pattern as images)
+            if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Please Wait...';
+            window.setTimeout(()=>{if(!success){
+                if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Try Again';
+            }}, 20000);
+            fetch('/describe/' + audioName)
+                .then(response => response.json())
+                .then(data => {
+                    if (ele) ele.textContent = data.description;
+                    success = true;
+                    if (ele && ele.nextElementSibling) ele.nextElementSibling.innerText = 'Re-Caption This Audio';
                 });
         }
         function blank(e){
@@ -235,8 +271,8 @@ def gallery():
 
             htmlContent = doc.documentElement.outerHTML;
 
-            // Fix quirks mode. Remove /images/ portion of tag
-            htmlContent = "<!DOCTYPE html>"+htmlContent.replace(/[/]images[/]/g, "");
+            // Fix quirks mode. Remove /images/ and /media/ portions of tag for portability
+            htmlContent = "<!DOCTYPE html>"+htmlContent.replace(/\\/(images|media)\\//g, "");
 
             // Create a Blob from the HTML content
             var blob = new Blob([htmlContent], { type: 'text/html' });
@@ -257,37 +293,79 @@ def gallery():
             // Show help message
             document.getElementById("help").style.display="inline-block";
         });
-        </script><script>
+    </script><script>
         // Search functions
         let figures = document.querySelectorAll('figure');
-
-        function init() {
-            let search = document.getElementById('search');
-            search.addEventListener('keyup', filterFigures, true);
-            search.addEventListener('click', (e) => {
-                e.target.select();
-                filterFigures(e);
-            }, true);
-        }
-
+       
         function filterFigures(event) {
             if (event.key == "Escape") event.target.value = '';
-            let searchTerm = event.target.value.trim().toLowerCase();
+            let searchTerm = (event.target.value || '').trim().toLowerCase();
             if (searchTerm.length == 0) searchTerm = ' ';
             figures.forEach(figure => {
-                if (!figure.querySelector('figcaption')) {
-                    //console.log(figure.querySelector('img').src);
+                const caption = figure.querySelector('figcaption');
+                if (!caption) {
                     figure.style.display = 'inline-block';
-                } else
-                if (figure.querySelector('figcaption').innerText.toLowerCase()
-                    .includes(searchTerm))
+                } else if (caption.innerText.toLowerCase().includes(searchTerm)) {
                     figure.style.display = 'inline-block';
-                else figure.style.display = 'none';
+                } else {
+                    figure.style.display = 'none';
+                }
             });
         }
-        init();
-    </script>
-    ''', images=image_files, figures=figures_collection, models=models)
+
+        function init() {
+             let search = document.getElementById('search');
+             search.addEventListener('keyup', filterFigures, true);
+             search.addEventListener('click', (e) => {
+                 e.target.select();
+                 filterFigures(e);
+             }, true);
+            // Draw waveforms for any audio canvases
+            document.querySelectorAll('canvas.waveform[data-src]').forEach(c => drawWaveform(c));
+         }
+ 
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        async function drawWaveform(canvas) {
+            try {
+                const url = canvas.dataset.src;
+                if (!url) return;
+                if (!audioCtx) audioCtx = new AudioCtx();
+                const resp = await fetch(url);
+                const arrayBuffer = await resp.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                const raw = audioBuffer.getChannelData(0);
+                const w = canvas.width, h = canvas.height;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#222';
+                ctx.fillRect(0, 0, w, h);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#4CAF50';
+                ctx.beginPath();
+                const step = Math.max(1, Math.floor(raw.length / w));
+                for (let i = 0; i < w; i++) {
+                    let min = 1, max = -1;
+                    for (let j = 0; j < step; j++) {
+                        const v = raw[i * step + j];
+                        if (v < min) min = v;
+                        if (v > max) max = v;
+                    }
+                    const x = i;
+                    const y1 = (1 + min) * 0.5 * h;
+                    const y2 = (1 + max) * 0.5 * h;
+                    ctx.moveTo(x, y1);
+                    ctx.lineTo(x, y2);
+                }
+                ctx.stroke();
+            } catch (e) {
+                console.log('waveform draw error', e);
+            }
+        }
+         init();
+     </script>
+    ''', images=image_files, figures=figures_collection, models=models
+    , audios=audio_files
+)
 
 @app.route('/model/<ai>')
 def model_switch(ai):
@@ -309,11 +387,13 @@ def describe_image(filename):
 "Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, "+
 "dolor."})
 
-    image_path = os.path.join(IMAGE_FOLDER, filename)
-    prompt = "Describe this image in 10-50 words."
+    file_path = os.path.join(IMAGE_FOLDER, filename)
+    is_audio = filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a'))
+    prompt = "Describe this audio in 10-50 words." if is_audio else "Describe this image in 10-50 words."
+
     if GEMINI_API_KEY and app.model == 'gemini':
-        # temporarily uploads the image to google
-        myfile = genai.upload_file(image_path)
+        # temporarily uploads the file (image or audio) to google
+        myfile = genai.upload_file(file_path)
         model = genai.GenerativeModel("gemini-1.5-flash")
         try:
             response = model.generate_content(
@@ -323,38 +403,58 @@ def describe_image(filename):
         except ValueError as ve:
             return jsonify({"description": f"{ve}"})
     elif app.model in models:
-        image = Image.open(image_path).resize((250, 250))
-        # Convert the image to base64
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
-        # Create the data URL
-        image_url = f"data:image/png;base64,{image_base64}"
-
-        response = lclient.chat.completions.create(
-            model = app.model,
-            messages=[
-               {"role": "user", "content": [
+        # For audio files, encode raw bytes into input_audio content (base64 + format).
+        if is_audio:
+            with open(file_path, "rb") as f:
+                audio_bytes = f.read()
+            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+            audio_format = filename.rsplit('.', 1)[1].lower()
+            response = lclient.chat.completions.create(
+                model=app.model,
+                messages=[
+                    {"role": "user", "content": [
                         {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url
-                            },
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": audio_base64,
+                                "format": audio_format
+                            }
                         },
-                        {"type": "text", "text": prompt},
+                        {"type": "text", "text": prompt}
                     ]}
-            ], stream=False,
-            stop=["<|im_end|>", "###"]
-        )
-        return jsonify({"description": response.choices[0].message.content})
+                ], stream=False,
+                stop=["<|im_end|>", "###"]
+            )
+            return jsonify({"description": response.choices[0].message.content})
+        else:
+            # Image path: keep previous behavior
+            image = Image.open(file_path).resize((250, 250))
+            buffered = io.BytesIO()
+            image.save(buffered, format="PNG")
+            image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            image_url = f"data:image/png;base64,{image_base64}"
+            response = lclient.chat.completions.create(
+                model=app.model,
+                messages=[
+                   {"role": "user", "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_url},
+                            },
+                            {"type": "text", "text": prompt},
+                        ]}
+                ], stream=False,
+                stop=["<|im_end|>", "###"]
+            )
+            return jsonify({"description": response.choices[0].message.content})
     elif app.model == 'openai' and gpt_key:
+        if is_audio:
+            # OpenAI chat/file handling for audio is not implemented here
+            return jsonify({"description": "OpenAI audio analysis is not supported by this gallery interface."})
         # Upload the image to OpenAI
-        with open(image_path, "rb") as image:
-            file_response = client.files.create(file=image,
-            purpose='vision')
+        with open(file_path, "rb") as image:
+            file_response = client.files.create(file=image, purpose='vision')
         file_id = file_response.id
-
         # Generate caption with GPT-3.5-Turbo
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -371,6 +471,11 @@ def describe_image(filename):
 @app.route('/images/<filename>')
 def image_file(filename):
     """Module: image_file: Retrieve local image from flask"""
+    return send_from_directory(IMAGE_FOLDER, filename)
+
+@app.route('/media/<filename>')
+def media_file(filename):
+    """Serve audio/media files from the gallery folder"""
     return send_from_directory(IMAGE_FOLDER, filename)
 
 if __name__ == '__main__':
