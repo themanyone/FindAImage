@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """Module: AI Image Gallery
 Description: Create searchable photo albums and online image portfolios
 with the help of AI.
@@ -25,8 +25,6 @@ lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
 # Discover llava/vision/omni models to show in dropdown box (case-insensitive)
 models = [model.id for model in lclient.models.list()
     if any(k in model.id.lower() for k in ("llava", "vision", "omni"))]
-# Lowercase set for case-insensitive checks
-models_lower = {m.lower() for m in models}
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -443,7 +441,7 @@ def describe_image(filename):
             return jsonify({"description": f"{response.text}"})
         except ValueError as ve:
             return jsonify({"description": f"{ve}"})
-    elif app.model.lower() in models_lower:
+    elif app.model in models:
         # For audio files, encode raw bytes into input_audio content (base64 + format).
         if is_audio:
             with open(file_path, "rb") as f:
