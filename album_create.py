@@ -522,7 +522,13 @@ if __name__ == '__main__':
     PORT = 9165
     print(f"Starting server on {HOST}:{PORT}")
     if len(sys.argv) >= 2:
-        IMAGE_FOLDER = sys.argv[1]
+        arg = os.path.expanduser(sys.argv[1])
+        # If the argument contains no directory separators, build a full
+        # absolute path relative to the current working directory.
+        if (os.sep not in arg[:-1]) and (os.altsep is None or os.altsep not in arg):
+            IMAGE_FOLDER = os.path.abspath(os.path.join(os.getcwd(), arg))
+        else:
+            IMAGE_FOLDER = os.path.abspath(arg)
     else:
         IMAGE_FOLDER = '.'
     print(f"Image folder is {IMAGE_FOLDER}")
