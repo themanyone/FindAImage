@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import sys
 from bs4 import BeautifulSoup
 
 def parse_html(file_path):
@@ -31,10 +32,10 @@ if __name__ == "__main__":
         print("Usage: python script.py <path_to_index.html>")
         sys.exit(1)
 
-    index_path = sys.argv[1]
+    image_path = sys.argv[1]
 
     if not os.path.exists(image_path):
         print(f"Error: The index.html at {image_path} does not exist.")
         sys.exit(1)
 
-    print(parse_html(index_path))
+    print(parse_html(image_path))

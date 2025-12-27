@@ -410,7 +410,6 @@ def model_switch(ai):
 @app.route('/describe/<filename>')
 def describe_image(filename):
     """Module: describe_image: generate image descriptions
-    
     :param filename: name of image file to analyze
     :returns: image description JSON"""
     print(f"Generating caption with {app.model} model")
@@ -513,6 +512,7 @@ def media_file(filename):
 
 @app.route('/favicon.ico')
 def favicon():
+    """Serve a browser add-favorites icon from the app directory"""
     return send_from_directory(app.root_path, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
