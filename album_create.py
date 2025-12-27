@@ -178,7 +178,7 @@ def gallery():
         {% for image in images %}
             <figure style="float: left; margin: 10px;" title="{{ image }}">
                 <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}" style="width: 320px;"><br>
-                <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
+                <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
             <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage(this)">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
