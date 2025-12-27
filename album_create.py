@@ -179,15 +179,15 @@ def gallery():
             <figure style="float: left; margin: 10px;" title="{{ image }}">
                 <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}" style="width: 320px;"><br>
                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ image.replace('.', '_') }}">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
-            <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage('{{ image }}')">Use AI</a></figure>
+            <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage(this)">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
             <figure style="float: left; margin: 10px;" title="{{ audio }}">
-                <audio id="audio_{{ audio.replace('.', '_') }}" controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" style="width: 320px;"></audio><br>
-                <canvas class="waveform" id="wave_{{ audio.replace('.', '_') }}" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
-                 <figcaption onClick="blank(this)" contenteditable="true" id="{{ audio.replace('.', '_') }}">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
+                <audio controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" style="width: 320px;"></audio><br>
+                <canvas class="waveform" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
+                 <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
                  <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
-                 <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio('{{ audio }}')">Use AI</a>
+                 <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio(this)">Use AI</a>
              </figure>
          {% endfor %}
     <script>
@@ -199,10 +199,10 @@ def gallery():
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
-        function describeImage(imageName) {
+        function describeImage(btn) {
             let success = false;
-            const ele = document.getElementById(imageName.replace('.', '_'));
-            const btn = ele ? ele.nextElementSibling : null;
+            const imageName = btn.dataset.filename;
+            const ele = btn.previousElementSibling;
             if (btn) btn.innerText = 'Please Wait...';
             const to = setTimeout(()=>{ if(!success && btn) btn.innerText = 'Try Again'; }, 20000);
             return fetch('/describe/' + imageName)
@@ -220,10 +220,10 @@ def gallery():
                     throw err;
                 });
         }
-        function describeAudio(audioName) {
+        function describeAudio(btn) {
             let success = false;
-            const ele = document.getElementById(audioName.replace('.', '_'));
-            const btn = ele ? ele.nextElementSibling : null;
+            const audioName = btn.dataset.filename;
+            const ele = btn.previousElementSibling;
             if (btn) btn.innerText = 'Please Wait...';
             const to = setTimeout(()=>{ if(!success && btn) btn.innerText = 'Try Again'; }, 20000);
             return fetch('/describe/' + audioName)
@@ -254,12 +254,12 @@ def gallery():
                 if (item.offsetParent === null) continue;
                 // skip non-blank captions
                 const figcaption = item.previousElementSibling;
-                if (figcaption && figcaption.innerText.trim().length > 0) continue;
+                if (figcaption && figcaption.innerText !== 'None') continue;
                 const type = item.dataset.type;
                 const fname = item.dataset.filename;
                 try {
-                    if (type === 'audio') await describeAudio(fname);
-                    else await describeImage(fname);
+                    if (type === 'audio') await describeAudio(item);
+                    else await describeImage(item);
                 } catch (e) {
                     console.log('AI caption error', e);
                 }
@@ -504,6 +504,10 @@ def image_file(filename):
 def media_file(filename):
     """Serve audio/media files from the gallery folder"""
     return send_from_directory(IMAGE_FOLDER, filename)
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.root_path, 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     HOST = "http://localhost"
