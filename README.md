@@ -1,3 +1,4 @@
+
 # FindAImage
 
 Use AI image descriptions to build organized photo albums, multimedia portfolios, and meme pages.
@@ -56,9 +57,7 @@ export OPENAI_API_KEY=<my API key>
 
 A local server is our preferred way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
 
-[llama-cpp-python](https://github.com/abetlen/llama-cpp-python) has an option to configure an OpenAI-compatible [server] with the ability to choose which model to use from our drop-down menus. Getting it to work with CUDA is complicated. It's well worth building, though. But to keep these instructions simple, you may skip ahead and run `llama-server` directly.
-
-First, build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their instructions. Compile it with the type of acceleration that supports your hardware, if possible. Prefer CUDA for Nvidia GPU cards.
+Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their instructions. Compile it with the type of acceleration that supports your hardware, if possible. Prefer CUDA for Nvidia GPU cards.
 
 ## Start LLAVA Server
 
@@ -90,8 +89,6 @@ This starts a chat server (yes, yet another server--a web server this time) so, 
 
 ## Photo Album Builder
 
-Once `llama-cpp-python` is set up and running, you can configure it to serve the above models. Or just keep using llama-server.
- 
 Test captioning photos in the memes directory. This will launch a server to host the photo album builder. The builder then creates a web page that will be the photo album or media portfolio.
 
 `./album_create.py memes`
