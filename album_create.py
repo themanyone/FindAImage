@@ -24,7 +24,7 @@ LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
 # Discover llava/vision/omni models to show in dropdown box (case-insensitive)
 models = [model.id for model in lclient.models.list()
-    if any(k in model.id.lower() for k in ("llava", "vision", "omni"))]
+    if any(k in model.id.lower() for k in ("llava", "vision", "omni", "vox"))]
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -186,7 +186,7 @@ def gallery():
                 <audio controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" style="width: 320px;"></audio><br>
                 <canvas class="waveform" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
                  <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
-                 <!-- Use AI button for audio (hidden by default, shown for Omni models) -->
+                 <!-- Use AI button for audio (hidden by default, shown for Omni and Vox models) -->
                  <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio(this)">Use AI</a>
              </figure>
          {% endfor %}
@@ -194,9 +194,12 @@ def gallery():
         function switch_ai(val) {
             //console.log(val);
             fetch('/model/' + val)
-            // Show audio AI buttons only when Omni model is selected
-            const showAudioAI = (val || '').toLowerCase().includes('omni');
+            const showAudioAI = val.toLowerCase().includes('omni')
+                             || val.toLowerCase().includes('vox')
+                             || val.toLowerCase().includes('lorem');
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
+            const showVisionAI = !val.toLowerCase().includes('vox');
+            document.querySelectorAll('.ai-button:not(.ai-audio)').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
         function describeImage(btn) {
@@ -254,7 +257,10 @@ def gallery():
                 if (item.offsetParent === null) continue;
                 // skip non-blank captions
                 const figcaption = item.previousElementSibling;
-                if (figcaption && figcaption.innerText !== 'None') continue;
+                if (figcaption && figcaption.innerText !== 'None'
+                    && figcaption.innerText !== ''
+                    && figcaption.innerText.slice(0, 5) !== 'Click'
+                    && figcaption.innerText.slice(0, 5) !== 'Lorem') continue;
                 const type = item.dataset.type;
                 const fname = item.dataset.filename;
                 try {

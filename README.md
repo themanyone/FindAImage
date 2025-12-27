@@ -1,10 +1,10 @@
 
 # FindAImage
 
-Use AI image descriptions to build organized photo albums, multimedia portfolios, and meme pages.
+Use manually-entered and AI-generated descriptions to build organized photo albums, multimedia portfolios, and meme pages.
 
  * Simple utility. Creates searchable media captions, in browser.
- * Offline and private. Optionally use OpenAI or Google.
+ * Offline and private. Or optionally use OpenAI or Google.
  * Internet-ready. Can publish album/portfolio as a website.
  * Light wight. Does not require torch. 4GiB VRAM.
  * Free and open-source. NO WARRANTIES. See LICENSE.
@@ -30,7 +30,7 @@ Or, if it's already downloaded, `git pull`.
 
 ## Python Dependencies
 
-To keep requirements from potentially messing up your default python setup, you might want to install and use `uv` to create a virtual environment.
+To keep requirements from potentially messing up your default python setup, and to speed things up, you might want to install and use `uv` to create a virtual environment.
 
 ```shell
 sudo dnf -y install uv
@@ -63,17 +63,19 @@ Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their inst
 
 If you have more than 4GB VRAM, you can remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
-Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
+- Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
+- We use -a "model-alias" with "vision" or "omni" to tell our program to use those capabilities. 
+- We also limit token generation to 200 to prevent these models from running on and overheating.
 
-`llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087 -a "Qwen2.5-vision"`
+`llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087 -n 200 -a "Qwen2.5-vision"`
 
-Text & audio (just over 2GiB download).
+**Text & audio.** (just over 2GiB download).
 
-`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087 -a "Ultravox-vision"`
+`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087 -n 200 -a "Ultravox-omni"`
 
 **Omni models** support combined text, image & audio input.
 
-`llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087 -a "Qwen2.5-Omni"`
+`llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087 -n 200 -a "Qwen2.5-Omni"`
 
 [Multimodal text & video](https://huggingface.co/Mungert/SkyCaptioner-V1-GGUF) (Video may not be supported by llama-server yet but link has good info & scripts).
 
@@ -104,21 +106,21 @@ When Omni model is selected, the photo album builder can also caption audio file
 **Supervise children.** Be aware that these models are under active development. Their 
 output, though usually fine, *may not always be safe* for all ages.
 
-Once you open the web page, you can
-- select a model from the drop-down menu in the upper-left,
+Once you open the link, and see the browser interface,
+- select a vision model from the drop-down in the upper-left,
 - click buttons to generate captions,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
 
-Copy the saved `index.html` back to the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images.
+The saved abum will go into your Downloads folder. Copy the downloaded `index.html` back into the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images.
 
 Now try making albums/portfolios in your other image folders.
 
 ```shell
-./album_create.py ~/Pictures/2024
+./album_create.py ~/Pictures/2025
 ```
 
-# Linux Tutorial
+# Linux Notes
 
 **This section is no longer required.** Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
 
