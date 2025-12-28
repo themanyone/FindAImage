@@ -15,7 +15,6 @@ from openai import OpenAI
 from figs import parse_html
 from xmp import get_keywords
 
-client = OpenAI()
 app = Flask(__name__)
 IMAGE_FOLDER="."
 app.model = 'lorem' # default to lorem ipsum
@@ -23,8 +22,14 @@ app.model = 'lorem' # default to lorem ipsum
 LLAVA_ENDPOINT = "http://localhost:8087/v1"
 lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
 # Discover llava/vision/omni models to show in dropdown box (case-insensitive)
-models = [model.id for model in lclient.models.list()
-    if any(k in model.id.lower() for k in ("llava", "vision", "omni", "vox"))]
+try:
+    models = [model.id for model in lclient.models.list()
+        if any(k in model.id.lower() for k in ("llava", "vision", "omni", "vox"))]
+    if len(models) == 0:
+        print(f"\nNo llava/vision/omni/vox models found at {LLAVA_ENDPOINT}\n")
+except Exception as e:
+    print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
+    models = [] 
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -93,13 +98,17 @@ def gallery():
         p {
             font-size:12pt;
         }
-        figure {
+        figure, img {
             width:320px;
             display:inline;
             white-space: nowrap;
+            transition: width 0.3s ease, left 0.3s ease;
         }
-        figure:hover{
+        figure:hover *:not(.button) {
             white-space: normal;
+            width: 640px;
+            position: relative;
+            z-index: 10;            
         }
         figcaption {
             position: relative;
@@ -177,13 +186,13 @@ def gallery():
     </header>
         {% for image in images %}
             <figure style="float: left; margin: 10px;" title="{{ image }}">
-                <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}" style="width: 320px;"><br>
+                <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}"><br>
                 <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
             <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage(this)">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
             <figure style="float: left; margin: 10px;" title="{{ audio }}">
-                <audio controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" style="width: 320px;"></audio><br>
+                <audio controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}"></audio><br>
                 <canvas class="waveform" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
                  <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
                  <!-- Use AI button for audio (hidden by default, shown for Omni and Vox models) -->
@@ -480,6 +489,7 @@ def describe_image(filename):
             )
             return jsonify({"description": response.choices[0].message.content})
     elif app.model.lower() == 'openai' and gpt_key:
+        client = OpenAI()
         if is_audio:
             # OpenAI chat/file handling for audio is not implemented here
             return jsonify({"description": "OpenAI audio analysis is not supported by this gallery interface."})
