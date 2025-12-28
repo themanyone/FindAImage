@@ -64,16 +64,18 @@ Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their inst
 If you have more than 4GB VRAM, you can remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
 - Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
-- We use -a "model-alias" with "vision" or "omni" to tell our program to use those capabilities. 
+- We use -a "model-alias" with "llava", "vision", "vox" or "omni" to tell our program to use those capabilities. 
 - We also limit token generation to 200 to prevent these models from running on and overheating.
+
+**Vision/LLAVA.** Caption your images.
 
 `llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port 8087 -n 200 -a "Qwen2.5-vision"`
 
-**Text & audio.** (just over 2GiB download).
+**Text & audio.** Caption audio, not images. (just over 2GiB download).
 
-`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087 -n 200 -a "Ultravox-omni"`
+`llama-server -ngl 17 -hf ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF --port 8087 -n 200 -a "Ultravox"`
 
-**Omni models** support combined text, image & audio input.
+**Omni models.** Support both image & audio captions.
 
 `llama-server -ngl 16 -hf ggml-org/Qwen2.5-Omni-3B-GGUF:Q4_K_M --port 8087 -n 200 -a "Qwen2.5-Omni"`
 
@@ -103,8 +105,7 @@ If there is an existing `index.html` in the image folder, it will import caption
 
 When Omni model is selected, the photo album builder can also caption audio files!
 
-**Supervise children.** Be aware that these models are under active development. Their 
-output, though usually fine, *may not always be safe* for all ages.
+**Supervise children.** Be aware that these models are under active development. Their output, though usually fine, *may not always be safe* for all ages.
 
 Once you open the link, and see the browser interface,
 - select a vision model from the drop-down in the upper-left,
@@ -112,7 +113,7 @@ Once you open the link, and see the browser interface,
 - click inside text boxes to manually edit captions, 
 - and save the annotated photo album.
 
-The saved abum will go into your Downloads folder. Copy the downloaded `index.html` back into the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images.
+The saved abum will go into your Downloads folder. Move the downloaded `index.html` back into the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images. Feel free to customize it, add CSS styles, etc.
 
 Now try making albums/portfolios in your other image folders.
 
@@ -135,7 +136,7 @@ Ubuntu, Debian.
 Arch
 `pacman -S tidy pinfo`
 
-## Install [llama.cpp](https://github.com/themanyone/llama.cpp.git)
+## Install
 
 For this section, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
 
