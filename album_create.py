@@ -257,6 +257,24 @@ def gallery():
         async function aiCaptionAll() {
             const control = document.getElementById('ai_caption_all');
             if (!control) return;
+            let shouldStop = false;
+                                  
+            // Add a button for shouldStop
+            const stopButton = document.createElement('button');
+            stopButton.innerText = 'Stop';
+            stopButton.className = 'button';
+            stopButton.style.background="darkred";
+            stopButton.style.color="white";
+            stopButton.style.marginLeft="10px";
+            control.parentNode.insertBefore(stopButton, control.nextSibling);
+            // Handle stop button click
+            stopButton.addEventListener('click', () => {
+                shouldStop = true;
+                stopButton.style.display = 'none';
+                stopButton.remove();
+            });
+
+            // process AI captions
             const original = control.innerText;
             control.disabled = true;
             control.innerText = 'Captioning...';
@@ -280,6 +298,7 @@ def gallery():
                 }
                 // small delay between items
                 await new Promise(r => setTimeout(r, 500));
+                if (shouldStop) break; // Exit early if shouldStop is true
             }
             control.innerText = 'Done';
             setTimeout(()=> { control.innerText = original; control.disabled = false; }, 1500);
