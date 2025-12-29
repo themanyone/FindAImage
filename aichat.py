@@ -6,15 +6,17 @@ system in addition to the usual chat functions. This interface is different in t
 the resulting chat text is editable. Just click on it a couple times."""
 import io
 import base64
+import os
 from pprint import pprint
 import gradio as gr
 from openai import OpenAI
 import librosa
-import os.path
 import soundfile as sf
+LLAVA_ENDPOINT = "http://localhost:8087/v1"
+model_changed = False
 
 LICENSE = """    AI Chat Interface
-    Copyright (C) 2024 Henry F Kroll III, www.thenerdshow.com
+    Copyright (C) 2025 Henry F Kroll III, www.thenerdshow.com
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,11 +33,16 @@ LICENSE = """    AI Chat Interface
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
     """
 
-client = OpenAI(base_url="http://localhost:8087/v1", api_key="llama.cpp")
+client = OpenAI(base_url=LLAVA_ENDPOINT, api_key="llama.cpp")
 
 # Get available models initially
-models = [model.id for model in client.models.list()]
-
+try:
+    models = [model.id for model in client.models.list()]
+    if len(models) == 0:
+        print(f"\nNo models found at {LLAVA_ENDPOINT}\n")
+except Exception as e:
+    print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
+    models = []
 JS = """function () {
   document.addEventListener('keyup', function(e) {
     if (e.keyCode === 32) {
@@ -70,13 +77,31 @@ CSS = """
 
 """
 
+def get_system_prompt(model_name: str) -> str:
+    """Module: get_system_prompt
+    :param model_name: Name of the model
+    :returns: Appropriate system prompt for the model"""
+    if any (a in model_name.lower() for a in ["omni", "multimodal", "audiovisual"]):
+        return "You are an AI assistant that can see and hear. You will be provided with images and audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    elif any (a in model_name.lower() for a in ["vision", "image", "llava"]):
+        return "You are an AI assistant that can see images. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    elif any (a in model_name.lower() for a in ["audio", "speech", "vox"]):
+        return "You are an AI assistant that can hear audio. You will be provided with audio files to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    else:
+        return "You are a helpful AI assistant."
+
 def predict(prompt, history: list):
     """Module: predict
-    
     :param prompt: User message to the chatbot
     :param history: List of messages
     :returns: Chat responses"""
     message_content = []
+    global model_changed
+    if history ==[] or model_changed:
+        system_prompt = get_system_prompt(demo.model)
+        # Add system prompt to start new conversation
+        history.append({"role": "system", "content": system_prompt})
+        model_changed = False
 
     # Handle text input
     message_content.append({"type": "text", "text": prompt})
@@ -122,10 +147,10 @@ def predict(prompt, history: list):
                 "type": "text",
                 "text": f"[Audio Error]: Failed to process audio: {str(e)}"
             })
+            print(e)
 
     # Append to history
     history.append({"role": "user", "content": message_content})
-    pprint(history)
 
     # Send request to the server
     try:
@@ -147,6 +172,7 @@ def predict(prompt, history: list):
     except Exception as e:
         history.append({"role": "assistant", "content": f"Error: {str(e)}".replace('\n', '<br>')})
         yield history[-1]
+    # pprint(history)
 
 def vote(data: gr.LikeData):
     """Module vote:
@@ -157,8 +183,9 @@ def vote(data: gr.LikeData):
     else:
         print("You downvoted this response: " + data.value[0])
 
-with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True,
-               fill_height=True, title="Local AI Chat - FindAImage") as demo:
+with gr.Blocks() as demo:
+    if len(models) == 0:
+        exit(1)
     demo.model = models[0]
     demo.image = None
     demo.audio = None
@@ -220,6 +247,10 @@ with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True,
             :param input_audio: an optional audio file to analyze
             :returns: None
             """
+            if demo.model != input_model:
+                # Model has changed, reset image and audio
+                global model_changed
+                model_changed = True
             demo.model = input_model
             demo.image = input_image
             demo.audio = input_audio
@@ -252,4 +283,4 @@ with gr.Blocks(theme=gr.themes.Soft(), js=JS, css=CSS, fill_width=True,
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS)
