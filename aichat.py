@@ -46,35 +46,7 @@ try:
 except Exception as e:
     print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
     models = []
-JS = """function () {
-  document.addEventListener('keyup', function(e) {
-    if (e.keyCode === 32) {
-      document.execCommand('insertHTML', false, ' ');
-    }
-  });
-  window.makeEditable = function(){
-    document.querySelectorAll('.chatbot').forEach(function(element) {
-      codes = element.querySelectorAll('code');
-      codes.forEach(e=>{e.innerText = e.innerText.replaceAll('<br>', '\\n');});
-      element.contentEditable = 'true';
-      var pe = element.parentElement.parentElement.parentElement;
-      var ns = pe.parentElement.nextElementSibling.firstElementChild;
-      if (ns.lastElementChild.name != 'ChatThis') {
-          var button = document.createElement('button');
-          button.textContent = 'Submit';
-          button.name = 'ChatThis';
-          button.onclick = function() {
-            var content = element.innerText;
-            // Submit the content using AJAX or a form
-            var ic = document.querySelector('.input-container');
-            ic.firstElementChild.value += content;
-            console.log(content);
-          };
-          ns.appendChild(button);
-       }
-    });
-  }
-}
+JS = """
 """
 CSS = """
 
@@ -191,7 +163,7 @@ def predict(prompt, history: list):
         for tok in response:                     # streamed tokens
             content = tok.choices[0].delta.content
             if content:
-                history[-1]["content"] += html.escape(content)
+                history[-1]["content"] += html.unescape(content)
                 token_count += 1
                 # Yield only the assistant message (first output)
                 yield history[-1]
@@ -241,6 +213,7 @@ with gr.Blocks() as demo:
         with gr.Column(scale=8):
             
             chat_interface = gr.ChatInterface(
+                editable=True,
                 fn=predict,
                 chatbot=gr.Chatbot(
                     height="calc(100vh - 140px)",
@@ -311,16 +284,6 @@ with gr.Blocks() as demo:
             inputs=[model_dropdown, image_input, audio_input],
             outputs=None
         )
-
-    gr.on(
-        triggers=[chat_interface.chatbot.select],
-        fn=lambda: None,
-        inputs=None,
-        outputs=None,
-        js="""function(){
-          makeEditable();
-        }"""
-    )
 
 if __name__ == "__main__":
     demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS, )
