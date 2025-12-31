@@ -7,6 +7,7 @@ the resulting chat text is editable. Just click on it a couple times."""
 import io
 import base64
 import os
+import requests
 from pprint import pprint
 import gradio as gr
 from openai import OpenAI
@@ -81,11 +82,20 @@ def get_system_prompt(model_name: str) -> str:
     """Module: get_system_prompt
     :param model_name: Name of the model
     :returns: Appropriate system prompt for the model"""
-    if any (a in model_name.lower() for a in ["omni", "multimodal", "audiovisual"]):
+    # get model capabilities from /props endpoint
+    response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props', timeout=5)
+    response.raise_for_status()
+    response_content = response.json()
+    modalities = response_content.get('modalities', {})
+    # print(f"Model modalities: {modalities}")
+    vision = modalities.get('vision', None)
+    audio = modalities.get('audio', None)
+    print(f"Model capabilities: vision={vision}, audio={audio}")
+    if vision and audio:
         return "You are an AI assistant that can see and hear. You will be provided with images and audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    elif any (a in model_name.lower() for a in ["vision", "image", "llava"]):
+    elif vision:
         return "You are an AI assistant that can see images. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    elif any (a in model_name.lower() for a in ["audio", "speech", "vox"]):
+    elif audio:
         return "You are an AI assistant that can hear audio. You will be provided with audio files to help answer the user's questions. Provide detailed and accurate responses based on the input data."
     else:
         return "You are a helpful AI assistant."
