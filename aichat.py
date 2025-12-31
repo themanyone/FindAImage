@@ -87,16 +87,24 @@ def get_system_prompt(model_name: str) -> str:
     response.raise_for_status()
     response_content = response.json()
     modalities = response_content.get('modalities', {})
-    # print(f"Model modalities: {modalities}")
-    vision = modalities.get('vision', None)
-    audio = modalities.get('audio', None)
-    print(f"Model capabilities: vision={vision}, audio={audio}")
-    if vision and audio:
-        return "You are an AI assistant that can see and hear. You will be provided with images and audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    elif vision:
-        return "You are an AI assistant that can see images. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    elif audio:
-        return "You are an AI assistant that can hear audio. You will be provided with audio files to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    multimodal = False
+    if modalities:
+        vision = modalities.get('vision', None)
+        audio = modalities.get('audio', None)
+        print(f"Model capabilities: vision={vision}, audio={audio}")
+        if vision or audio:
+            multimodal = True
+    else:
+        # get model args from /models endpoint
+        models = client.models.list()
+        model_info = next((m for m in models if m.id == model_name), None)
+        print(model_info)
+        if "status" in model_info and "args" in model_info.status:
+            args = model_info.status["args"]
+            if "--mmproj" in args:
+                multimodal = True
+    if multimodal:
+        return "You are an AI assistant with multimodal capabilities. You will be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
     else:
         return "You are a helpful AI assistant."
 
