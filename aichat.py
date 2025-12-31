@@ -4,9 +4,11 @@ Description: This module defines the interface and server for an artificial
 intelligence-powered chat system. It features image and audio queries and a rating 
 system in addition to the usual chat functions. This interface is different in that 
 the resulting chat text is editable. Just click on it a couple times."""
+import html
 import io
 import base64
 import os
+import time
 import requests
 from pprint import pprint
 import gradio as gr
@@ -183,14 +185,26 @@ def predict(prompt, history: list):
         )
 
         history.append({"role": "assistant", "content": ""})
-        for tok in response:  # pylint: disable=not-an-iterable
+        start_time = time.time()
+        token_count = 0
+
+        for tok in response:                     # streamed tokens
             content = tok.choices[0].delta.content
             if content:
-                history[-1]['content'] += content.replace('\n', '<br>')
+                history[-1]["content"] += html.escape(content)
+                token_count += 1
+                # Yield only the assistant message (first output)
                 yield history[-1]
+
+        elapsed = time.time() - start_time
+        tps = token_count / elapsed if elapsed > 0 else 0
+        tps_str = f"{tps:.1f} tokens/sec."
+
+        # Yield the final assistant message **and** the TPS string
+        yield history[-1], tps_str
     except Exception as e:
         history.append({"role": "assistant", "content": f"Error: {str(e)}".replace('\n', '<br>')})
-        yield history[-1]
+        yield history[-1], "0 tokens/sec."
     # pprint(history)
 
 def vote(data: gr.LikeData):
@@ -208,17 +222,31 @@ with gr.Blocks() as demo:
     demo.model = models[0]
     demo.image = None
     demo.audio = None
+    tps_box = gr.HTML(html_template = """
+        <div style='height: 100%; background: #234; padding: 20px; color: white; text-align: center;'>
+        <p>${value}</p>
+        <p>  
+            <a style="color: white" href="https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG">Support further development</a>
+        </p><p>
+            <a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html">LICENSE</a>
+        </p>
+        </div>
+        """,
+        value="0 tokens/sec.",
+        render=False
+    )
     with gr.Row(equal_height=False):
+
+        # ---- left‑hand column components ----
         with gr.Column(scale=8):
+            
             chat_interface = gr.ChatInterface(
-#                type="messages",
                 fn=predict,
                 chatbot=gr.Chatbot(
-#                    type="messages",
                     height="calc(100vh - 140px)",
-#                    show_copy_button=True,
                     placeholder="<strong>AI Chatbot</strong><br>Ask Me Anything"
                 ),
+                additional_outputs=[tps_box],     
                 fill_height=True,
                 examples=[
                     "What is the capital of France?",
@@ -230,6 +258,7 @@ with gr.Blocks() as demo:
             ).queue()
             chat_interface.chatbot.like(vote, None, None)
 
+        # ---- right‑hand column components (created first) ----
         with gr.Column(scale=1):
             with gr.Row(equal_height=False):
                 # Select model
@@ -247,15 +276,7 @@ with gr.Blocks() as demo:
                     type="filepath", label="Upload or Record Audio",
                     min_width=320, interactive=True
                 )
-                html_output = gr.HTML("""
-        <div style='height: 100%; background: #234; padding: 20px; color: white; text-align: center;'>
-        <p>
-            <a style="color: white" href="https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG">Support further development</a>
-        </p><p>
-            <a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html">LICENSE</a>
-        </p>
-        </div>
-        """)
+                tps_box.render()
 
         def update_model(input_model, input_image, input_audio):
             """
@@ -302,4 +323,5 @@ with gr.Blocks() as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS)
+    demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS, )
+
