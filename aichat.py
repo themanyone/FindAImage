@@ -58,7 +58,7 @@ def get_system_prompt(model_name: str) -> str:
     :param model_name: Name of the model
     :returns: Appropriate system prompt for the model"""
     # get model capabilities from /props endpoint
-    response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props', timeout=5)
+    response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props?model={model_name}', timeout=5)
     response.raise_for_status()
     response_content = response.json()
     modalities = response_content.get('modalities', {})
@@ -67,8 +67,12 @@ def get_system_prompt(model_name: str) -> str:
         vision = modalities.get('vision', None)
         audio = modalities.get('audio', None)
         print(f"Model capabilities: vision={vision}, audio={audio}")
-        if vision or audio:
-            multimodal = True
+        if vision and audio:
+            return "You are an AI assistant with multimodal capabilities. You will be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+        if vision:
+            return "You are an AI assistant with image understanding capabilities. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+        if audio:
+            return "You are an AI assistant with audio understanding capabilities. You will be provided with audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
     else:
         # get model args from /models endpoint
         models = client.models.list()
@@ -167,6 +171,7 @@ def predict(prompt, history: list):
                 # Yield only the assistant message (first output)
                 yield history[-1]
 
+        token_count *= 2.75  # approximate
         elapsed = time.time() - start_time
         tps = token_count / elapsed if elapsed > 0 else 0
         tps_str = f"{tps:.1f} tokens/sec."
