@@ -57,8 +57,14 @@ def get_system_prompt(model_name: str) -> str:
     """Module: get_system_prompt
     :param model_name: Name of the model
     :returns: Appropriate system prompt for the model"""
-    # get model capabilities from /props endpoint
-    response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props?model={model_name}', timeout=5)
+    # wait for capabilities from /props endpoint
+    for _ in range(10):
+        try:
+            response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props?model={model_name}', timeout=5)
+            if response.status_code == 200:
+                break
+        except requests.exceptions.RequestException:
+            time.sleep(1)
     response.raise_for_status()
     response_content = response.json()
     modalities = response_content.get('modalities', {})
