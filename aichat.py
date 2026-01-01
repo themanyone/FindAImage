@@ -7,6 +7,7 @@ the resulting chat text is editable. Just click on it a couple times."""
 import html
 import io
 import base64
+import json
 import os
 import time
 import requests
@@ -150,10 +151,8 @@ def predict(prompt, history: list):
         response = client.chat.completions.create(
             model=demo.model,
             messages=history,
-            max_tokens=500,
-            temperature=0.7,
+            temperature=0.2,
             stream=True,
-            stop=["<|im_end|>", "###"]
         )
 
         history.append({"role": "assistant", "content": ""})
@@ -179,14 +178,40 @@ def predict(prompt, history: list):
         yield history[-1], "0 tokens/sec."
     # pprint(history)
 
+# Create global storage for model votes
+votes = {}
+
+# Add file path for vote storage
+# filepath: /home/k/.local/src/python/FindAImage/votes.json
+def load_votes():
+    global votes
+    if os.path.exists("votes.json"):
+        with open("votes.json", "r") as f:
+            votes = json.load(f)
+
+def save_votes():
+    global votes
+    with open("votes.json", "w") as f:
+        json.dump(votes, f, indent=2)
+    
 def vote(data: gr.LikeData):
     """Module vote:
     
     :param data: gradio like data"""
+    load_votes()  # Load existing votes
+    model_name = demo.model  # Get current model from demo state
+    
+    # Initialize model entry if needed
+    if model_name not in votes:
+        votes[model_name] = {"up": 0, "down": 0}
+    
+    # Update counts
     if data.liked:
-        print("You upvoted this response: " + data.value[0])
+        votes[model_name]["up"] += 1
     else:
-        print("You downvoted this response: " + data.value[0])
+        votes[model_name]["down"] += 1
+    
+    save_votes()  # Persist changes
 
 with gr.Blocks() as demo:
     if len(models) == 0:
