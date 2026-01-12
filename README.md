@@ -61,7 +61,7 @@ Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their inst
 
 ## Start LLAVA Server
 
-If you have more than 4GB VRAM, you can remove -ngl option. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
+If you have more than 4GB VRAM, you can remove -ngl option to offload all layers to GPU. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
 - Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
 - We use -a "model-alias" with "llava", "vision", "vox" or "omni" to tell our program to use those capabilities. 
@@ -85,7 +85,11 @@ If you have more than 4GB VRAM, you can remove -ngl option. We are using a diffe
 
 `python aichat.py`
 
-This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with the above model hosted by `llama-server`, upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them. The omni model may be prompted with text, audio, and images simultaneously.
+This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with `llama-server` via our chat app. Upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them. Right now, ours is the only chat app, *that we know of*, that can prompt an omni model with text, audio, and images simultaneously. Try speaking your prompt into the recorded audio and see!
+
+**Update.** Now that llama.cpp also has a chat server of their own, you may want to try that. Theirs doesn't record audio or handle multimodal prompts as well as ours yet. But it might later. There is also a [router mode](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md), that serves up all the models in your `/models` directory. Then our apps can choose among them.
+
+**Up/down voting.** Now that `aichat.py`'s up and down-voting works, you can rank which models you like best. The rankings will appear in a file, `votes.json`. If you have downloaded several models, you could use that data later to decide which models to keep.
 
 **Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
 
@@ -141,7 +145,7 @@ Arch
 For this section, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
 
 ```bash
-git clone https://github.com/themanyone/llama.cpp.git
+git clone --depth 1 https://github.com/themanyone/llama.cpp.git
 git checkout hk # switch to --template branch.
 ```
 
@@ -154,7 +158,7 @@ Install by copying executables to somewhere in $PATH, such as `~/.local/bin/`.
 Link the models directory.
 
 ```bash
-cd #llama.cpp
+cd llama.cpp
 ln -s $(pwd)/models ~/.local/share/models
 ```
 
