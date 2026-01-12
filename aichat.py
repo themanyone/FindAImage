@@ -53,6 +53,7 @@ CSS = """
 
 """
 
+current_modalities = {}
 def get_system_prompt(model_name: str) -> str:
     """Module: get_system_prompt
     :param model_name: Name of the model
@@ -68,31 +69,21 @@ def get_system_prompt(model_name: str) -> str:
     response.raise_for_status()
     response_content = response.json()
     modalities = response_content.get('modalities', {})
-    multimodal = False
     if modalities:
         vision = modalities.get('vision', None)
         audio = modalities.get('audio', None)
-        print(f"Model capabilities: vision={vision}, audio={audio}")
+        if modalities != current_modalities:
+            current_modalities.clear()
+            current_modalities.update(modalities)
+            print(f"Model capabilities: {modalities}")
         if vision and audio:
             return "You are an AI assistant with multimodal capabilities. You will be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-        if vision:
+        elif vision:
             return "You are an AI assistant with image understanding capabilities. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-        if audio:
+        elif audio:
             return "You are an AI assistant with audio understanding capabilities. You will be provided with audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    else:
-        # get model args from /models endpoint
-        models = client.models.list()
-        model_info = next((m for m in models if m.id == model_name), None)
-        if "args" in model_info.status:
-            args = model_info.status["args"]
-            if "--mmproj" in args:
-                multimodal = True
-                # print(f"Model supports multimodal input.")
-    if multimodal:
-        return "You are an AI assistant with multimodal capabilities. You will be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-    else:
-        # print("Model is text-only.")
-        return "You are a helpful AI assistant."
+        else:
+            return "You are a helpful AI assistant."
 
 def predict(prompt, history: list):
     """Module: predict
