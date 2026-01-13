@@ -53,37 +53,30 @@ CSS = """
 
 """
 
-current_modalities = {}
+current_tags = []
 def get_system_prompt(model_name: str) -> str:
     """Module: get_system_prompt
     :param model_name: Name of the model
     :returns: Appropriate system prompt for the model"""
-    # wait for capabilities from /props endpoint
-    for _ in range(10):
-        try:
-            response = requests.get(f'{LLAVA_ENDPOINT[:-2]}props?model={model_name}', timeout=5)
-            if response.status_code == 200:
-                break
-        except requests.exceptions.RequestException:
-            time.sleep(1)
-    response.raise_for_status()
-    response_content = response.json()
-    modalities = response_content.get('modalities', {})
-    if modalities:
-        vision = modalities.get('vision', None)
-        audio = modalities.get('audio', None)
-        if modalities != current_modalities:
-            current_modalities.clear()
-            current_modalities.update(modalities)
-            print(f"Model capabilities: {modalities}")
-        if vision and audio:
-            return "You are an AI assistant with multimodal capabilities. You will be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-        elif vision:
-            return "You are an AI assistant with image understanding capabilities. You will be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-        elif audio:
-            return "You are an AI assistant with audio understanding capabilities. You will be provided with audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
-        else:
-            return "You are a helpful AI assistant."
+    from look_up_model import get_caps
+    tags = get_caps(model_name.lower().split(':')[0])
+    vision = 'vision' in tags or 'omni' in tags
+    audio = 'audio' in tags or 'omni' in tags
+    video = 'video' in tags or 'omni' in tags
+    global current_tags
+    if tags != current_tags:
+        current_tags = tags
+        print(f"Model capabilities: {tags}") # don't repeat the same message
+    if vision and audio and video:
+        return "You are an AI assistant with multimodal capabilities. You may be provided with images, audio, or video to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    elif vision and audio:
+        return "You are an AI assistant with multimodal capabilities. You may be provided with images or audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    elif vision:
+        return "You are an AI assistant with image understanding capabilities. You may be provided with images to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    elif audio:
+        return "You are an AI assistant with audio understanding capabilities. You may be provided with audio to help answer the user's questions. Provide detailed and accurate responses based on the input data."
+    else:
+        return "You are a helpful AI assistant."
 
 def predict(prompt, history: list):
     """Module: predict

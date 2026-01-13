@@ -18,18 +18,40 @@ from xmp import get_keywords
 app = Flask(__name__)
 IMAGE_FOLDER="."
 app.model = 'lorem' # default to lorem ipsum
-# Local llava-llama.cpp endpoint
-LLAVA_ENDPOINT = "http://localhost:8087/v1"
-lclient = OpenAI(base_url=LLAVA_ENDPOINT, api_key="sk-xxx")
-# Discover llava/vision/omni models to show in dropdown box (case-insensitive)
+# Local llava-llama.cpp router endpoint
+# See https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
+BASE_URL = "http://localhost:8087/v1"
+lclient = OpenAI(base_url=BASE_URL, api_key="sk-xxx")
+# Get image/audio/video/any-to-any models to populate dropdown
+# We have to get tags with look_up_model.py & models.csv
+# Since router endpoints do not provide tag info (yet?).
+# Update models.csv with update_models.py, or add your own.
+from look_up_model import get_caps
+unfiltered = [model.id for model in lclient.models.list()]
+
+# Initialize list of eligible models and dictionary for tags
+models = []
+model_tags = {}
+
 try:
-    models = [model.id for model in lclient.models.list()
-        if any(k in model.id.lower() for k in ("llava", "vision", "omni", "vox"))]
-    if len(models) == 0:
-        print(f"\nNo llava/vision/omni/vox models found at {LLAVA_ENDPOINT}\n")
+    for model in unfiltered:
+        if model == "default":
+            continue
+        ml = model.lower()
+        # Attempt to retrieve tags using get_caps
+        tags = get_caps(ml.split(':')[0])
+        if not tags:
+            tags = get_caps(ml.rsplit('-', 1)[0])
+        print(f"Model: {model}, Tags: {tags}")
+        # Check if model supports image/audio/any/video
+        if 'image' in tags or 'audio' in tags or 'any' in tags or 'video' in tags:
+            models.append(model)
+            model_tags[model] = tags
 except Exception as e:
-    print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
-    models = [] 
+    print(f"\nERROR retrieving model tags: {e}\n")
+
+if len(models) == 0:
+    print(f"\nNo image/audio/video models found at {BASE_URL}\n")
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -77,6 +99,9 @@ def gallery():
             height: 100%;
             width: 100%;
             overflow: auto;
+        }
+        #ai {
+            max-width: 20em;
         }
         a {
             color: #eee;
@@ -195,7 +220,7 @@ def gallery():
                 <audio controls src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}"></audio><br>
                 <canvas class="waveform" data-src="{{ url_for('media_file', filename=audio) }}" title="{{ audio }}" width="320" height="64"></canvas>
                  <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(audio, "Click to add searchable caption...") }}</figcaption>
-                 <!-- Use AI button for audio (hidden by default, shown for Omni and Vox models) -->
+                 <!-- Use AI button for audio (hidden by default, shown for any and audio models) -->
                  <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio(this)">Use AI</a>
              </figure>
          {% endfor %}
@@ -203,11 +228,11 @@ def gallery():
         function switch_ai(val) {
             //console.log(val);
             fetch('/model/' + val)
-            const showAudioAI = val.toLowerCase().includes('omni')
-                             || val.toLowerCase().includes('vox')
+            const showAudioAI = val.toLowerCase().includes('any')
+                             || val.toLowerCase().includes('audio')
                              || val.toLowerCase().includes('lorem');
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
-            const showVisionAI = !val.toLowerCase().includes('vox');
+            const showVisionAI = !val.toLowerCase().includes('audio');
             document.querySelectorAll('.ai-button:not(.ai-audio)').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
@@ -425,7 +450,7 @@ def gallery():
          init();
      </script>
     ''', images=image_files, figures=figures_collection, models=models
-    , audios=audio_files
+    , model_tags=model_tags, audios=audio_files
 )
 
 @app.route('/model/<ai>')
