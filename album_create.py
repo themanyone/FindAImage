@@ -71,13 +71,14 @@ def gallery():
     figures_collection = {}
     # Get captions (figures_collection) from index.html, if it exists
     index_path = os.path.join(IMAGE_FOLDER, 'index.html')
-    image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-    audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a'))]
+    image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
+    audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.alac', '.aiff', '.opus', ))]
+    video_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mpeg', '.mpg'))]
     if os.path.isfile(index_path):
         figures_collection = parse_html(index_path)
     else:
         # Populate captions / keywords for both images and audio files
-        for fname in image_files + audio_files:
+        for fname in image_files + audio_files + video_files:
             figures_collection[fname] = get_keywords(os.path.join(IMAGE_FOLDER, fname))
     return render_template_string('''<!DOCTYPE html><head>
         <meta charset="UTF-8"><!--//
