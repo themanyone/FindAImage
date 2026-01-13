@@ -42,11 +42,11 @@ try:
         tags = get_caps(ml.split(':')[0])
         if not tags:
             tags = get_caps(ml.rsplit('-', 1)[0])
-        print(f"Model: {model}, Tags: {tags}")
         # Check if model supports image/audio/any/video
         if 'image' in tags or 'audio' in tags or 'any' in tags or 'video' in tags:
             models.append(model)
             model_tags[model] = tags
+            print(f"{tags} \t{model}")
 except Exception as e:
     print(f"\nERROR retrieving model tags: {e}\n")
 
@@ -225,15 +225,26 @@ def gallery():
                  <a class="button ai-audio ai-button" data-type="audio" data-filename="{{ audio }}" style="display:none" onclick="describeAudio(this)">Use AI</a>
              </figure>
          {% endfor %}
+        {% for video in videos %}
+            <figure style="float: left; margin: 10px;" title="{{ video }}">
+                <video width="320" height="240" controls>
+                  <source src="{{ url_for('media_file', filename=video) }}" type="video/mp4">
+                  Your browser does not support the video tag.
+                </video><br>
+                 <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(video, "Click to add searchable caption...") }}</figcaption>
+                 <!-- Use AI button for video (shown for any, video, and image models) -->
+                 <a class="button ai-button" data-type="video" data-filename="{{ video }}" onclick="describeImage(this)">Use AI</a>
+             </figure>
+         {% endfor %}
     <script>
         function switch_ai(val) {
             //console.log(val);
             fetch('/model/' + val)
-            const showAudioAI = val.toLowerCase().includes('any')
-                             || val.toLowerCase().includes('audio')
-                             || val.toLowerCase().includes('lorem');
+            var showAudioAI = val.includes('Lorem') || model_tags[val]?.includes('audio') 
+                || model_tags[val]?.includes('any');
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
-            const showVisionAI = !val.toLowerCase().includes('audio');
+            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image') 
+                || model_tags[val]?.includes('any') || model_tags[val]?.includes('video');
             document.querySelectorAll('.ai-button:not(.ai-audio)').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
@@ -451,7 +462,7 @@ def gallery():
          init();
      </script>
     ''', images=image_files, figures=figures_collection, models=models
-    , model_tags=model_tags, audios=audio_files
+    , model_tags=model_tags, audios=audio_files, videos = video_files
 )
 
 @app.route('/model/<ai>')
