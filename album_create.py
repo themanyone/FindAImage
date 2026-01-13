@@ -194,7 +194,7 @@ def gallery():
             <option value="openai">OpenAI</option>
             <option value="gemini">Gemini</option>
         {% for model in models %}
-            <option value="{{ model }}">{{ model }}</option>
+            <option value="{{ model.replace(':', ';').replace('/', ',') }}">{{ model }}</option>
         {% endfor %}
         </select>
     </label>
@@ -214,7 +214,7 @@ def gallery():
             <figure style="float: left; margin: 10px;" title="{{ image }}">
                 <img src="{{ url_for('image_file', filename=image) }}" alt="{{ image }}" title="{{ image }}"><br>
                 <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(image, "Click to add searchable caption...") }}</figcaption>
-            <a class="button ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage(this)">Use AI</a></figure>
+            <a class="button ai-image ai-button" data-type="image" data-filename="{{ image }}" onclick="describeImage(this)">Use AI</a></figure>
         {% endfor %}
         {% for audio in audios %}
             <figure style="float: left; margin: 10px;" title="{{ audio }}">
@@ -233,19 +233,25 @@ def gallery():
                 </video><br>
                  <figcaption onClick="blank(this)" contenteditable="true">{{ figures.get(video, "Click to add searchable caption...") }}</figcaption>
                  <!-- Use AI button for video (shown for any, video, and image models) -->
-                 <a class="button ai-button" data-type="video" data-filename="{{ video }}" onclick="describeImage(this)">Use AI</a>
+                 <a class="button ai-video ai-button" data-type="video" data-filename="{{ video }}" onclick="describeImage(this)">Use AI</a>
              </figure>
          {% endfor %}
     <script>
         function switch_ai(val) {
             //console.log(val);
-            fetch('/model/' + val)
-            var showAudioAI = val.includes('Lorem') || model_tags[val]?.includes('audio') 
+            fetch('/model/' + val);
+            const model_tags = {{ model_tags | tojson }};
+            var showAudioAI = val.includes('lorem') || model_tags[val]?.includes('audio') 
+                || model_tags[val]?.includes('any');
+                                  console.log(`${val} ${model_tags[val]}`);
+            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image') 
+                || model_tags[val]?.includes('any') || model_tags[val]?.includes('video')
+                                  || typeof model_tags[val] === 'undefined';
+            const showVideoAI = val.includes('Lorem') || model_tags[val]?.includes('video') 
                 || model_tags[val]?.includes('any');
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
-            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image') 
-                || model_tags[val]?.includes('any') || model_tags[val]?.includes('video');
-            document.querySelectorAll('.ai-button:not(.ai-audio)').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
+            document.querySelectorAll('.ai-image').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
+            document.querySelectorAll('.ai-video').forEach(b => b.style.display = showVideoAI ? 'inline-block' : 'none');
         }
         switch_ai(document.getElementById('ai').value);
         function describeImage(btn) {
@@ -462,13 +468,13 @@ def gallery():
          init();
      </script>
     ''', images=image_files, figures=figures_collection, models=models
-    , model_tags=model_tags, audios=audio_files, videos = video_files
+    , model_tags=model_tags, audios=audio_files, videos=video_files
 )
 
 @app.route('/model/<ai>')
 def model_switch(ai):
     """Module: model_switch: switch model using dropdown from web page"""
-    app.model = ai
+    app.model = ai.replace(';', ':').replace(',', '/')
     print("AI model switched to " + app.model)
     return ai
 
