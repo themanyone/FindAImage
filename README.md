@@ -122,7 +122,7 @@ The saved abum will go into your Downloads folder. Move the downloaded `index.ht
 Now try making albums/portfolios in your other image folders.
 
 ```shell
-./album_create.py ~/Pictures/2025
+./album_create.py ~/Pictures/2026
 ```
 
 # Linux Notes
@@ -345,4 +345,4 @@ Well, that's it. We built `llama.cpp`, downloaded a llava model, made some scrip
     - Buy me a coffee https://buymeacoffee.com/isreality
     - [TheNerdShow.com](http://thenerdshow.com/)
 
-Copyright (C) 2024-2025 Henry Kroll III, www.thenerdshow.com. See [LICENSE](LICENSE) for details.
+Copyright (C) 2024-2026 Henry Kroll III, www.thenerdshow.com. See [LICENSE](LICENSE) for details.

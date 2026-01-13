@@ -20,7 +20,7 @@ LLAVA_ENDPOINT = "http://localhost:8087/v1"
 model_changed = False
 
 LICENSE = """    AI Chat Interface
-    Copyright (C) 2025 Henry F Kroll III, www.thenerdshow.com
+    Copyright (C) 2026 Henry F Kroll III, www.thenerdshow.com
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -231,7 +231,6 @@ with gr.Blocks() as demo:
 
         # ---- left‑hand column components ----
         with gr.Column(scale=8):
-            
             chat_interface = gr.ChatInterface(
                 editable=True,
                 fn=predict,
@@ -239,19 +238,19 @@ with gr.Blocks() as demo:
                     height="calc(100vh - 140px)",
                     placeholder="<strong>AI Chatbot</strong><br>Ask Me Anything"
                 ),
-                additional_outputs=[tps_box],     
+                additional_outputs=[tps_box],
                 fill_height=True,
                 examples=[
                     "What is the capital of France?",
                     "Who was the first person on the moon?",
                     "Describe this image in 10-50 words.",
-                    "Describe this audio in 10-50 words.",
+                    "Describe this audio in 10-50 words.",  
                     "Reply with transcribed audio."
                 ]
             ).queue()
             chat_interface.chatbot.like(vote, None, None)
 
-        # ---- right‑hand column components (created first) ----
+        # ---- right‑hand column components ----
         with gr.Column(scale=1):
             with gr.Row(equal_height=False):
                 # Select model

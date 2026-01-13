@@ -2,7 +2,7 @@
 """Module: AI Image Gallery
 Description: Create searchable photo albums and online image portfolios
 with the help of AI.
-License: Copyright (C) 2024 Henry F Kroll III, see LICENSE
+License: Copyright (C) 2026 Henry F Kroll III, see LICENSE
 """
 import io
 import os
