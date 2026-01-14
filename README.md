@@ -89,6 +89,15 @@ This starts a chat server (yes, yet another server--a web server this time) so, 
 
 **Update.** Now that llama.cpp also has a chat server of their own, you may want to try that. Theirs doesn't record audio or handle multimodal prompts as well as ours yet. But it might later. There is also a [router mode](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md), that serves up all the models in your `/models` directory. Then our apps can choose among them.
 
+If you use llama.cpp's router with Omni model, it crash with a message to the effect that it requires ub >= c. This might not always be the case, but just a FYI. We had to use -ub option or put ub into the configuration in our .models.ini:
+
+```
+[Qwen2.5-Omni-7B-IQ4_XS]
+ngl = 29
+c = 16384
+ub = 16384
+```
+
 **Up/down voting.** Now that `aichat.py`'s up and down-voting works, you can rank which models you like best. The rankings will appear in a file, `votes.json`. If you have downloaded several models, you could use that data later to decide which models to keep.
 
 **Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
