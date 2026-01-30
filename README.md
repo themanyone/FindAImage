@@ -81,15 +81,11 @@ If you have more than 4GB VRAM, you can remove -ngl option to offload all layers
 
 [Multimodal text & video](https://huggingface.co/Mungert/SkyCaptioner-V1-GGUF) (Video may not be supported by llama-server yet but link has good info & scripts).
 
-## Start Chat Server to Test
+## Router Mode
 
-`python aichat.py`
+If you have several AI models, you might want to try `llama-server`'s [router mode](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md#using-multiple-models), that serves up all the models in your `/models` directory. Then our apps can choose among them.
 
-This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with `llama-server` via our chat app. Upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them. Right now, ours is the only chat app, *that we know of*, that can prompt an omni model with text, audio, and images simultaneously. Try speaking your prompt into the recorded audio and see!
-
-**Update.** Now that llama.cpp also has a chat server of their own, you may want to try that. Theirs doesn't record audio or handle multimodal prompts as well as ours yet. But it might later. There is also a [router mode](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md), that serves up all the models in your `/models` directory. Then our apps can choose among them.
-
-If you use llama.cpp's router with Omni model, it crash with a message to the effect that it requires ub >= c. This might not always be the case, but just a FYI. We had to use -ub option or put ub into the configuration in our .models.ini:
+**Omni model crashes.** If you use llama.cpp's router with Omni model, it crash with a message to the effect that it requires ub >= c. This might not always be the case, but just a FYI. We had to use -ub option or put ub into the configuration in our .models.ini:
 
 ```
 [Qwen2.5-Omni-7B-IQ4_XS]
@@ -97,6 +93,14 @@ ngl = 29
 c = 16384
 ub = 16384
 ```
+
+## Our Own Chat Server
+
+`python aichat.py`
+
+This starts a chat server (yes, yet another server--a web server this time) so, if port 7860 is open on your firewall, anyone on your wifi can interact with `llama-server` via our chat app. Upload or capture pictures from a webcam (for models that support them), read and translate text in images, or ask questions about them. Right now, ours is the only chat app, *that we know of*, that can prompt an omni model with text, audio, and images simultaneously. Try speaking your prompt into the recorded audio and see!
+
+**Update.** Now that llama.cpp also has a chat server of their own, you may want to try that. Theirs doesn't record audio or handle multimodal prompts as well as ours yet. But it might later.
 
 **Up/down voting.** Now that `aichat.py`'s up and down-voting works, you can rank which models you like best. The rankings will appear in a file, `votes.json`. If you have downloaded several models, you could use that data later to decide which models to keep.
 
@@ -134,197 +138,6 @@ Now try making albums/portfolios in your other image folders.
 ./album_create.py ~/Pictures/2026
 ```
 
-# Linux Notes
-
-**This section is no longer required.** Learn to use local AI from the command line on Linux. From there we can automate caption generation of entire directories and subdirectories. The command line is where we get ideas to make this stuff.
-
-Install at least tidy. For documentation, consider also installing `pinfo`.
-
-Fedora, Centos.
-`dnf install tidy pinfo`
-
-Ubuntu, Debian.
-`dpkg -i tidy pinfo`
-
-Arch
-`pacman -S tidy pinfo`
-
-## Install
-
-For this section, we are using our own unofficial fork of [llama.cpp](https://github.com/themanyone/llama.cpp.git). We have submitted our changes via pull request. If accepted, maybe the official version will become usable.
-
-```bash
-git clone --depth 1 https://github.com/themanyone/llama.cpp.git
-git checkout hk # switch to --template branch.
-```
-
-Build according to the project's instructions.
-
-Install by copying executables to somewhere in $PATH, such as `~/.local/bin/`.
-
-`cp llama-* ~/.local/bin/`
-
-Link the models directory.
-
-```bash
-cd llama.cpp
-ln -s $(pwd)/models ~/.local/share/models
-```
-
-Obtain a [llava model](https://huggingface.co/xtuner/llava-phi-3-mini-gguf/tree/main) and matching `mmproj` file from huggingface in `gguf` format.
-
-```bash
-wget -c https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-phi-3-mini-int4.gguf?download=true
-wget -c https://huggingface.co/xtuner/llava-phi-3-mini-gguf/resolve/main/llava-phi-3-mini-mmproj-f16.gguf?download=true
-```
-
-## Build scripts
-
-Create a script to launch the llava model and mmproj file together with your favorite options. Running this command will recreate `~/.local/bin/llava_phi3.sh`. But maybe you should edit this in case locations are different. The `-ngl 16` loads some of the model into VRAM. Increase it to `-ngl 33` if you have plenty of AI resources.
-
-```bash
-cat << EOF > ~/.local/bin/llava_phi3.sh
-llama-llava-cli -ngl 16 \
--m ~/.local/share/models/llava-phi-3-mini-int4.gguf \
---mmproj  ~/.local/share/models/llava-phi-3-mini-mmproj-f16.gguf \
--c 4096 "$@"
-EOF
-```
-
-Now we are ready to test the model on some images. First, try a single image. Change directory to where images reside.
-
-```bash
-cd ~/Pictures
-llava_phi3.sh --image file.jpg
-```
-
-## Gather image data
-
-If that works, we can create a database in the form of a web page of the whole directory. While technically not a database, it allows visual and text searching, plus copy and paste access to photographs.
-
-```bash
-shopt -s nullglob
-printf -- "--image %q " *.png *.webm *.jpg *.jpeg|xargs llava_phi3.sh -p "Write a quick, 10-50 word caption for this image. Just one caption. Minimum 10 words." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
-```
-
-The `printf` `--` option tells printf not to interpret everything as options. The `%q` outputs file names with spaces and special characters properly escaped. We could have used `find` for this. The `nullglob` option to `shopt` is necessary to prevent bash from causing errors if no images are found matching [pattern]. Bash tries to pass off the glob pattern itself as one of the images. So we turn that feature off. 
-
-You can even recurse sub-directories with `printf`, if you enable globstar `shopt -s globstar`. For more information (FYI): `pinfo bash --node "The Shopt Builtin"`.
-
-### Update from .csv
-
-Someday it might be necessary to update the captions, working with a subset of images in a comma-separated, quoted `.csv` file. This is made possible by reading the data into an array. FYI: `pinfo bash --node "Arrays"`
-
-`IFS="," read -r -a a <<< "files.csv"`
-
-Or if you have `xsel` installed. You can work with .csv data copied to the clipboard with `CTRL-C`.
-
-`IFS="," read -r -a a <<< "$(xsel -b)"`
-
-The `IFS` file separator tells Bash the file is comma-separated. FYI: `pinfo bash --node "Word Splitting"`
-
-```
-echo "${a[@]}"|xargs printf -- "--image %q " | xargs llava_phi3.sh -p "Write a quick, 10-50 word caption for this image. Just one caption. Minimum 10 words." --template '<figure><img src="[image]" alt="[[image]]"><figcaption>[description]</figcaption></figure>' -c 4096 --log-disable | tee data
-```
-
-The `echo "${a[@]}"` echos the file names properly quoted. FYI: pinfo bash --node "Quoting". We use `xargs` repeatedly to keep file name arguments quoted as they pass through the pipeline.
-
-## Analyze image data
-
-Photos are processed one by one, formatting the output according to the
-template we provided. We now have a data file that looks like this.
-
-```
-<figure><img src="test pattern.png" alt="test pattern.png"><figcaption> The colorful television screen displays the image of a fish tank with blue, red, yellow, green, and blue elements.
-
-</figcaption></figure><figure><img src="trading patterns.png" alt="trading patterns.png"><figcaption> A computer monitor displaying a variety of graphs and diagrams.
-
-</figcaption></figure><figure><img src="Youtube-button.png" alt="Youtube-button.png"><figcaption> The YouTube logo is red and white.
-
-</figcaption></figure><figure><img src="20230218_215924.jpg" alt="20230218_215924.jpg"><figcaption> A small digital scale shows the number 378.
-
-</figcaption></figure><figure><img src="dad.jpg" alt="dad.jpg"><figcaption> A person plays the grand piano in an exhibition hall.
-
-</figcaption></figure><figure><img src="ferry.jpg" alt="ferry.jpg"><figcaption> A boat is docked at a port near a forest.
-
-</figcaption></figure><figure><img src="github_error.jpg" alt="github_error.jpg"><figcaption> The image shows a screenshot of a screenshot of a screenshot of a screenshot of a screenshot of a screenshot of a screenshot of a screenshot of a screenshot</figcaption></figure>
-```
-
-## Build a web page automatically
-
-We could manually clean this `data` up to make a proper HTML page. But tools like HTML tidy already exist for that. This command builds `album.html` from `data`.
-
-`tidy -i -o album.html data`
-
-```
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="generator" content=
-  "HTML Tidy for HTML5 for Linux version 5.8.0">
-  <title></title>
-</head>
-<body>
-  <figure>
-    <img src="test%20pattern.png" alt="test pattern.png">
-    <figcaption>
-      The colorful television screen displays the image of a fish
-      tank with blue, red, yellow, green, and blue elements.
-    </figcaption>
-  </figure>
-  <figure>
-    <img src="trading%20patterns.png" alt="trading patterns.png">
-    <figcaption>
-      A computer monitor displaying a variety of graphs and
-      diagrams.
-    </figcaption>
-  </figure>
-...
-```
-
-We now have a nice web page of photos with AI-generated captions. Feel free to make corrections. Let's add some CSS to make the photo album look better. Insert `<link rel="stylesheet" href="album.css">` somewhere between the <head> and </head> tags.
-
-```
-<!DOCTYPE html>
-<html>
-<head> 
-  <meta name="generator" content=
-  "HTML Tidy for HTML5 for Linux version 5.8.0">
-  <title></title>
-  <link rel="stylesheet" href="album.css">
-</head>
-...
-```
-
-And create a basic css file.
-
-```
-cat << EOF > album.css
-  img{
-    height:300px;
-  }
-  figure{
-    width:350px;
-    display:inline-block;
-    white-space: nowrap;
-  }
-  figcaption {
-    position: absolute;
-    width: inherit;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: #181818;
-  }
-  figure:hover{
-    white-space: normal;
-  }
-  body{
-    background-color: #181818;
-    color: #e0e0e0;
-  }
-EOF
-```
-
 ## Launch the album
 
 Rename the album to something creative. Launch the album in the default web browser. 
@@ -339,11 +152,11 @@ Search for text captions in the browser by pressing `CTRL+F`. It will scroll to 
 
 ## Advanced search
 
-There is some JavaScript to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become a hidden part of a commercial product.
+There is some JavaScript to alternately show and hide groups of images based on what you type into a search bar. For an example of this, look in the `memes` directory. You may use this so long as it doesn't become part of a commercial product that denies proper credit and royalties to the author.
 
 ## Closing thoughts
 
-Well, that's it. We built `llama.cpp`, downloaded a llava model, made some scripts, and built a photo album. We made a searchable web page, with AI-generated image captions. And we created a shortcut on the Desktop. What else could we be doing with the help of AI?
+Well, that's it. We built `llama.cpp`, made AI image descriptions locally, and built a photo album. We made a searchable web page, with AI-generated image captions. And we created a shortcut on the Desktop. What else could we be doing with the help of AI?
 
 ## Discuss
 
