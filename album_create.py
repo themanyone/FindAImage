@@ -64,7 +64,7 @@ OpenAI.api_key = gpt_key
 @app.route('/')
 def gallery():
     """Module: gallery: Generate the portfolio builder page
-    
+
     :inputs: None
     :outputs: None"""
     # Fill collection with existing captions / EXIF XMP keywords
@@ -134,7 +134,7 @@ def gallery():
             white-space: normal;
             width: 640px;
             position: relative;
-            z-index: 10;            
+            z-index: 10;
         }
         figcaption {
             position: relative;
@@ -188,7 +188,7 @@ def gallery():
         </ul>
         <a class="button" onClick="this.parentElement.style.display='none'" href="">Okay. Got it.</a>
     </span>
-    <label for="ai" style="position:absolute; left:5px; top: 5px;">AI to use 
+    <label for="ai" style="position:absolute; left:5px; top: 5px;">AI to use
         <select id="ai" onChange="switch_ai(this.value)">
             <option value="lorem">Lorem Ipsum</option>
             <option value="openai">OpenAI</option>
@@ -241,13 +241,13 @@ def gallery():
             //console.log(val);
             fetch('/model/' + val);
             const model_tags = {{ model_tags | tojson }};
-            var showAudioAI = val.includes('lorem') || model_tags[val]?.includes('audio') 
+            var showAudioAI = val.includes('lorem') || model_tags[val]?.includes('audio')
                 || model_tags[val]?.includes('any');
                                   console.log(`${val} ${model_tags[val]}`);
-            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image') 
+            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image')
                 || model_tags[val]?.includes('any') || model_tags[val]?.includes('video')
                                   || typeof model_tags[val] === 'undefined';
-            const showVideoAI = val.includes('Lorem') || model_tags[val]?.includes('video') 
+            const showVideoAI = val.includes('Lorem') || model_tags[val]?.includes('video')
                 || model_tags[val]?.includes('any');
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
             document.querySelectorAll('.ai-image').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
@@ -301,7 +301,7 @@ def gallery():
             const control = document.getElementById('ai_caption_all');
             if (!control) return;
             let shouldStop = false;
-                                  
+
             // Add a button for shouldStop
             const stopButton = document.createElement('button');
             stopButton.innerText = 'Stop';
@@ -400,7 +400,7 @@ def gallery():
     </script><script>
         // Search functions
         let figures = document.querySelectorAll('figure');
-       
+
         function filterFigures(event) {
             if (event.key == "Escape") event.target.value = '';
             let searchTerm = (event.target.value || '').trim().toLowerCase();
@@ -427,7 +427,7 @@ def gallery():
             // Draw waveforms for any audio canvases
             document.querySelectorAll('canvas.waveform[data-src]').forEach(c => drawWaveform(c));
          }
- 
+
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
         async function drawWaveform(canvas) {

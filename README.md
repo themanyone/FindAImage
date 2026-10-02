@@ -55,7 +55,7 @@ export OPENAI_API_KEY=<my API key>
 
 ## Local LLAVA server
 
-A local server is our preferred way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server. 
+A local server is our preferred way to generate captions, avoid censorship, and keep everything private. Let's build a local GPU-accelerated AI model server.
 
 Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their instructions. Compile it with the type of acceleration that supports your hardware, if possible. Prefer CUDA for Nvidia GPU cards.
 
@@ -64,7 +64,7 @@ Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their inst
 If you have more than 4GB VRAM, you can remove -ngl option to offload all layers to GPU. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
 
 - Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
-- We use -a "model-alias" with "llava", "vision", "vox" or "omni" to tell our program to use those capabilities. 
+- We use -a "model-alias" with "llava", "vision", "vox" or "omni" to tell our program to use those capabilities.
 - We also limit token generation to 200 to prevent these models from running on and overheating.
 
 **Vision/LLAVA.** Caption your images.
@@ -127,7 +127,7 @@ When Omni model is selected, the photo album builder can also caption audio file
 Once you open the link, and see the browser interface,
 - select a vision model from the drop-down in the upper-left,
 - click buttons to generate captions,
-- click inside text boxes to manually edit captions, 
+- click inside text boxes to manually edit captions,
 - and save the annotated photo album.
 
 The saved abum will go into your Downloads folder. Move the downloaded `index.html` back into the directory where the images are. Launch it with a browser (or double click it in your file manager) any time you want to search images. Feel free to customize it, add CSS styles, etc.
@@ -140,7 +140,7 @@ Now try making albums/portfolios in your other image folders.
 
 ## Launch the album
 
-Rename the album to something creative. Launch the album in the default web browser. 
+Rename the album to something creative. Launch the album in the default web browser.
 
 `xdg-open album.html`
 
