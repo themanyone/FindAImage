@@ -9,11 +9,14 @@ import io
 import base64
 import json
 import os
+import re
+import subprocess
 import sys
 import time
 import tempfile
 import requests
 from pprint import pprint
+from PIL import Image
 import gradio as gr
 import librosa
 import soundfile as sf
@@ -80,6 +83,39 @@ def get_system_prompt(model_name: str) -> str:
     else:
         return "You are a helpful AI assistant."
 
+EXT = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.tif')
+
+def extract_doc_text(path: str, max_chars: int = 8000) -> str:
+    """Module: extract_doc_text
+    :param path: Path to the uploaded document
+    :param max_chars: Cap on extracted text
+    :returns: Plain text extracted from the document (or an error note)"""
+    ext = os.path.splitext(path)[1].lower()
+    try:
+        if ext == '.pdf':
+            proc = subprocess.run(
+                ['pdftotext', '-layout', path, '-'], capture_output=True, text=True)
+            text = proc.stdout
+        elif ext == '.docx':
+            proc = subprocess.run(
+                ['pandoc', '-t', 'plain', path], capture_output=True, text=True)
+            text = proc.stdout
+        elif ext in ('.doc', '.odt', '.rtf', '.epub'):
+            proc = subprocess.run(
+                ['pandoc', '-t', 'plain', path], capture_output=True, text=True)
+            text = proc.stdout
+        else:
+            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+                text = f.read()
+    except Exception as e:
+        return f"[Document Error]: Could not read document: {str(e)}"
+    text = re.sub(r'\s+', ' ', text).strip()
+    if not text:
+        return "[Document Error]: No readable text found in document."
+    if len(text) > max_chars:
+        text = text[:max_chars] + " [...truncated]"
+    return text
+
 def predict(prompt, history: list):
     """Module: predict
     :param prompt: User message to the chatbot
@@ -96,18 +132,35 @@ def predict(prompt, history: list):
     # Handle text input
     message_content.append({"type": "text", "text": prompt})
 
-    # Handle image input
+    # Handle image or document input
     if demo.image is not None:
-        img = demo.image.resize((250, 250))
-        buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
-        image_bytes = buffered.getvalue()
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-        image_url = f"data:image/png;base64,{image_base64}"
-        message_content.append({
-            "type": "image_url",
-            "image_url": {"url": image_url}
-        })
+        if demo.image.lower().endswith(EXT):
+            try:
+                img = Image.open(demo.image)
+                img.thumbnail((250, 250))
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                image_bytes = buffered.getvalue()
+                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                image_url = f"data:image/png;base64,{image_base64}"
+                message_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": image_url}
+                })
+            except Exception as e:
+                message_content.append({
+                    "type": "text",
+                    "text": f"[Image Error]: Failed to process image: {str(e)}"
+                })
+                print(e)
+        else:
+            doc_text = extract_doc_text(demo.image)
+            message_content.append({"type": "text", "text": doc_text})
+            message_content.append({
+                "type": "text",
+                "text": "\n[The text above was extracted from the uploaded document. "
+                        "Use it to answer the user's question.]"
+            })
 
     # Handle audio input
     temp_audio_path = None
@@ -257,6 +310,7 @@ with gr.Blocks() as demo:
                     "Who was the first person on the moon?",
                     "Describe this image in 10-50 words.",
                     "Describe this audio in 10-50 words.",
+                    "Summarize the uploaded document.",
                     "Reply with transcribed audio."
                 ]
             ).queue()
@@ -270,9 +324,10 @@ with gr.Blocks() as demo:
                     choices=models, label="Select Model", value=models[0],
                     min_width=320, interactive=True
                 )
-                # Add image upload component
-                image_input = gr.Image(
-                    type="pil", label="Upload Image",
+                # Add image/document upload component
+                image_input = gr.File(
+                    type="filepath", label="Upload Image or Document",
+                    file_types=["image", "pdf", "text", ".docx"],
                     min_width=320, interactive=True
                 )
                 # Add audio upload component
@@ -287,7 +342,7 @@ with gr.Blocks() as demo:
             Module: update_model(model, image, audio)
 
             :param input_model: the model to chat with
-            :param input_image: an optional image to analyze
+            :param input_image: an optional image or document to analyze
             :param input_audio: an optional audio file to analyze
             :returns: None
             """

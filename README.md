@@ -39,6 +39,15 @@ source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
 
+**System requirements.** To extract text from uploaded documents in `aichat.py`, the following command-line tools are used and should be installed:
+
+```shell
+sudo dnf -y install poppler-utils  # provides pdftotext (for PDF files)
+sudo dnf -y install pandoc          # converts .docx/.doc/.odt/.rtf/.epub to text
+```
+
+Plain-text files (`.txt`/`.md`/`.json`) need no extra tools. Images, audio, and text still work if these utilities are missing; only the corresponding document formats will fail.
+
 ## Optional ChatGPT from OpenAI
 
 Export `OPENAI_API_KEY` to enable ChatGPT. Edit `.bashrc`, or another startup file to make it permanent.
@@ -105,6 +114,8 @@ This starts a chat server (yes, yet another server--a web server this time) so, 
 **Up/down voting.** Now that `aichat.py`'s up and down-voting works, you can rank which models you like best. The rankings will appear in a file, `votes.json`. If you have downloaded several models, you could use that data later to decide which models to keep.
 
 **Canvas mode.** You can edit questions, code, and responses right in the interface by clicking twice on the text. A button will appear to submit a new query with your edits, comments, or annotations.
+
+**Upload documents.** The image upload also accepts documents (PDF, DOCX, plain text, etc.). The text inside them is extracted and sent to the model.
 
 ![chat](chat.png)
 
