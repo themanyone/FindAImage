@@ -23,6 +23,7 @@ app.model = 'lorem' # default to lorem ipsum
 # See https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
 BASE_URL, _ = nethost.endpoint()
 lclient = nethost.get_client(api_key="sk-xxx")
+AUDIO_EXTS = ('.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.alac', '.aiff', '.opus')
 # Get image/audio/video/any-to-any models to populate dropdown
 # We have to get tags with look_up_model.py & models.csv
 # Since router endpoints do not provide tag info (yet?).
@@ -77,7 +78,7 @@ def gallery():
     # Get captions (figures_collection) from index.html, if it exists
     index_path = os.path.join(IMAGE_FOLDER, 'index.html')
     image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
-    audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.alac', '.aiff', '.opus', ))]
+    audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(AUDIO_EXTS)]
     video_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mpeg', '.mpg'))]
     if os.path.isfile(index_path):
         figures_collection = parse_html(index_path)
@@ -496,7 +497,7 @@ def describe_image(filename):
 "dolor."})
 
     file_path = os.path.join(IMAGE_FOLDER, filename)
-    is_audio = filename.lower().endswith(('.mp3', '.wav', '.ogg', '.m4a'))
+    is_audio = filename.lower().endswith(AUDIO_EXTS)
     prompt = "Describe this audio in 10-50 words." if is_audio else "Describe this image in 10-50 words."
 
     if GEMINI_API_KEY and app.model.lower() == 'gemini':
