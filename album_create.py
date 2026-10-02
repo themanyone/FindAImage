@@ -7,6 +7,7 @@ License: Copyright (C) 2026 Henry F Kroll III, see LICENSE
 import io
 import os
 import sys
+import time
 import base64
 from PIL import Image
 from flask import Flask, send_from_directory, render_template_string, jsonify
@@ -484,6 +485,62 @@ def model_switch(ai):
     print("AI model switched to " + app.model)
     return ai
 
+def describe_gemini(file_path, prompt):
+    """Module: describe_gemini: caption a local file via the Gemini API
+    :param file_path: path to the image or audio file
+    :param prompt: caption prompt
+    :returns: JSON description, or a friendly error message"""
+    try:
+        myfile = genai.upload_file(file_path)
+        # Audio uploads can take a moment to finish processing
+        for _ in range(15):
+            if myfile.state.name in ("ACTIVE", "STATE_UNSPECIFIED", "FAILED"):
+                break
+            time.sleep(2)
+            myfile = genai.get_file(myfile.name)
+        response = genai.GenerativeModel("gemini-2.0-flash").generate_content(
+            [myfile, "\n\n", prompt])
+        return jsonify({"description": response.text})
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return jsonify({"description": f"Gemini error: {e}"})
+
+def describe_openai(file_path, prompt, is_audio):
+    """Module: describe_openai: caption an image or audio file via the OpenAI API
+    :param file_path: path to the image or audio file
+    :param prompt: caption prompt
+    :param is_audio: whether the file is audio
+    :returns: JSON description, or a friendly error message"""
+    client = OpenAI(timeout=30)
+    try:
+        if is_audio:
+            # Transcribe with Whisper, then caption the transcript
+            with open(file_path, "rb") as f:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1", file=f)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user",
+                           "content": f"{prompt} Transcript: {transcript.text}"}])
+        else:
+            # Base64 data URI vision, no file upload needed
+            with open(file_path, "rb") as f:
+                image_data = f.read()
+            ext = file_path.rsplit('.', 1)[1].lower().replace("jpg", "jpeg")
+            mime = f"image/{ext}"
+            image_url = (f"data:{mime};base64,"
+                         f"{base64.b64encode(image_data).decode('utf-8')}")
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                    {"type": "text", "text": prompt},
+                ]}])
+        return jsonify({"description": response.choices[0].message.content})
+    except Exception as e:
+        print(f"OpenAI error: {e}")
+        return jsonify({"description": f"OpenAI error: {e}"})
+
 @app.route('/describe/<filename>')
 def describe_image(filename):
     """Module: describe_image: generate image descriptions
@@ -500,17 +557,11 @@ def describe_image(filename):
     is_audio = filename.lower().endswith(AUDIO_EXTS)
     prompt = "Describe this audio in 10-50 words." if is_audio else "Describe this image in 10-50 words."
 
-    if GEMINI_API_KEY and app.model.lower() == 'gemini':
-        # temporarily uploads the file (image or audio) to google
-        myfile = genai.upload_file(file_path)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        try:
-            response = model.generate_content(
-                [myfile, "\n\n", prompt]
-            )
-            return jsonify({"description": f"{response.text}"})
-        except ValueError as ve:
-            return jsonify({"description": f"{ve}"})
+    if app.model.lower() == 'gemini':
+        if GEMINI_API_KEY:
+            return describe_gemini(file_path, prompt)
+        return jsonify({"description":
+            "Gemini is not configured. Export GEMINI_API_KEY and try again."})
     elif app.model in models:
         # For audio files, encode raw bytes into input_audio content (base64 + format).
         if is_audio:
@@ -556,26 +607,11 @@ def describe_image(filename):
                 stop=["<|im_end|>", "###"]
             )
             return jsonify({"description": response.choices[0].message.content})
-    elif app.model.lower() == 'openai' and gpt_key:
-        client = OpenAI(timeout=30)
-        if is_audio:
-            # OpenAI chat/file handling for audio is not implemented here
-            return jsonify({"description": "OpenAI audio analysis is not supported by this gallery interface."})
-        # Upload the image to OpenAI
-        with open(file_path, "rb") as image:
-            file_response = client.files.create(file=image, purpose='vision')
-        file_id = file_response.id
-        # Generate caption with GPT-3.5-Turbo
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{prompt} Re. image with file ID: {file_id}"
-                }
-            ]
-        )
-        return jsonify({"description": response.choices[0].message.content})
+    elif app.model.lower() == 'openai':
+        if gpt_key:
+            return describe_openai(file_path, prompt, is_audio)
+        return jsonify({"description":
+            "OpenAI is not configured. Export OPENAI_API_KEY and try again."})
     return jsonify({"description": "no response"})
 
 @app.route('/images/<filename>')
