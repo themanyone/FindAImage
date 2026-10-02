@@ -11,26 +11,13 @@ import json
 import os
 import sys
 import time
-import socket
+import tempfile
 import requests
 from pprint import pprint
 import gradio as gr
-from openai import OpenAI
 import librosa
 import soundfile as sf
-from urllib.parse import urlparse
-LLAVA_ENDPOINT = os.environ.get("LLAVA_ENDPOINT", "http://localhost:8087/v1")
-LLAMA_PORT = urlparse(LLAVA_ENDPOINT).port or 8087
-LLAMA_HINT = """
-No model server found at {LLAVA_ENDPOINT}.
-Start llama-server with a multimodal model on the port matching that endpoint, e.g.:
-  llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port {LLAMA_PORT} -n 200 -a "Qwen2.5-vision"
-The -a flag names the model's capabilities ("vision", "audio", or "omni").
-To point these apps at another server, export LLAVA_ENDPOINT="http://localhost:PORT/v1"
-""".format(LLAVA_ENDPOINT=LLAVA_ENDPOINT, LLAMA_PORT=LLAMA_PORT)
-if "LLAVA_ENDPOINT" not in os.environ:
-    print(f"Using default model server at {LLAVA_ENDPOINT}. "
-          "Export LLAVA_ENDPOINT to change it.")
+import nethost
 model_changed = False
 
 LICENSE = """    AI Chat Interface
@@ -51,17 +38,17 @@ LICENSE = """    AI Chat Interface
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
     """
 
-client = OpenAI(base_url=LLAVA_ENDPOINT, api_key="llama.cpp")
+client = nethost.get_client()
 
 # Get available models initially
 try:
-    models = [model.id for model in client.models.list()]
+    models = nethost.fetch_models()
     if len(models) == 0:
-        print(f"\nNo models found at {LLAVA_ENDPOINT}\n")
+        print(f"\nNo models found at {nethost.endpoint()[0]}\n")
 except Exception as e:
-    print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
-    print(LLAMA_HINT)
-    models = []
+    print(f"\nERROR retrieving models from {nethost.endpoint()[0]}: {e}\n")
+    print(nethost.hint())
+    sys.exit(1)
 JS = """
 """
 CSS = """
@@ -123,12 +110,14 @@ def predict(prompt, history: list):
         })
 
     # Handle audio input
+    temp_audio_path = None
     if demo.audio is not None:
         try:
             # Resample audio to 16000 Hz for Ultravox compatibility
             audio, sr = librosa.load(demo.audio, sr=16000)
             # Save resampled audio to a temporary file
-            temp_audio_path = "temp_audio.wav"
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                temp_audio_path = tmp.name
             sf.write(temp_audio_path, audio, sr)
             # Read and encode the resampled audio
             with open(temp_audio_path, 'rb') as audio_file:
@@ -143,14 +132,15 @@ def predict(prompt, history: list):
                     "format": audio_format
                 }
             })
-            # Clean up temporary file
-            os.remove(temp_audio_path)
         except Exception as e:
             message_content.append({
                 "type": "text",
                 "text": f"[Audio Error]: Failed to process audio: {str(e)}"
             })
             print(e)
+        finally:
+            if temp_audio_path and os.path.exists(temp_audio_path):
+                os.remove(temp_audio_path)
 
     # Append to history
     history.append({"role": "user", "content": message_content})
@@ -196,13 +186,19 @@ votes = {}
 def load_votes():
     global votes
     if os.path.exists("votes.json"):
-        with open("votes.json", "r") as f:
-            votes = json.load(f)
+        try:
+            with open("votes.json", "r") as f:
+                votes = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            print("Warning: votes.json unreadable; ignoring it.")
+            votes = {}
 
 def save_votes():
     global votes
-    with open("votes.json", "w") as f:
+    tmp = "votes.json.tmp"
+    with open(tmp, "w") as f:
         json.dump(votes, f, indent=2)
+    os.replace(tmp, "votes.json")
 
 def vote(data: gr.LikeData):
     """Module vote:
@@ -225,8 +221,8 @@ def vote(data: gr.LikeData):
 
 with gr.Blocks() as demo:
     if len(models) == 0:
-        print(LLAMA_HINT)
-        exit(1)
+        print(nethost.hint())
+        sys.exit(1)
     demo.model = models[0]
     demo.image = None
     demo.audio = None
@@ -324,12 +320,8 @@ if __name__ == "__main__":
     PORT = 7860
     print("Starting the aichat server. Point your browser here (CTRL+Click):\n")
     print(f"Starting server on http://localhost:{PORT}")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            probe.bind(("0.0.0.0", PORT))
-        except OSError:
-            print(f"Port {PORT} unavailable. Another instance might be running.")
-            sys.exit(1)
+    if not nethost.port_free(PORT):
+        print(f"Port {PORT} unavailable. Another instance might be running.")
+        sys.exit(1)
     demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS, server_port=PORT)
 

@@ -8,12 +8,11 @@ import io
 import os
 import sys
 import base64
-import socket
-from urllib.parse import urlparse
 from PIL import Image
 from flask import Flask, send_from_directory, render_template_string, jsonify
 import google.generativeai as genai
 from openai import OpenAI
+import nethost
 from figs import parse_html
 from xmp import get_keywords
 
@@ -22,19 +21,8 @@ IMAGE_FOLDER="."
 app.model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp router endpoint
 # See https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
-BASE_URL = os.environ.get("LLAVA_ENDPOINT", "http://localhost:8087/v1")
-LLAMA_PORT = urlparse(BASE_URL).port or 8087
-LLAMA_HINT = """
-No model server found at {BASE_URL}.
-Start llama-server with a multimodal model on the port matching that endpoint, e.g.:
-  llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port {LLAMA_PORT} -n 200 -a "Qwen2.5-vision"
-The -a flag names the model's capabilities ("vision", "audio", or "omni").
-To point these apps at another server, export LLAVA_ENDPOINT="http://localhost:PORT/v1"
-""".format(BASE_URL=BASE_URL, LLAMA_PORT=LLAMA_PORT)
-if "LLAVA_ENDPOINT" not in os.environ:
-    print(f"Using default model server at {BASE_URL}. "
-          "Export LLAVA_ENDPOINT to change it.")
-lclient = OpenAI(base_url=BASE_URL, api_key="sk-xxx")
+BASE_URL, _ = nethost.endpoint()
+lclient = nethost.get_client(api_key="sk-xxx")
 # Get image/audio/video/any-to-any models to populate dropdown
 # We have to get tags with look_up_model.py & models.csv
 # Since router endpoints do not provide tag info (yet?).
@@ -62,15 +50,15 @@ try:
             print(f"{tags} \t{model}")
 except Exception as e:
     print(f"\nERROR retrieving model tags: {e}\n")
-    print(LLAMA_HINT)
+    print(nethost.hint())
 
 if len(models) == 0:
     print(f"\nNo image/audio/video models found at {BASE_URL}\n")
-    print(LLAMA_HINT)
+    print(nethost.hint())
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
-# Your Gemini API key (export GENAI_TOKEN)
-GEMINI_API_KEY = os.environ.get("GENAI_TOKEN")
+# Your Gemini API key (export GENAI_TOKEN or GENAI_KEY)
+GEMINI_API_KEY = os.environ.get("GENAI_TOKEN") or os.environ.get("GENAI_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 # Configure OpenAI
 gpt_key = os.getenv("OPENAI_API_KEY")
@@ -566,7 +554,7 @@ def describe_image(filename):
             )
             return jsonify({"description": response.choices[0].message.content})
     elif app.model.lower() == 'openai' and gpt_key:
-        client = OpenAI()
+        client = OpenAI(timeout=30)
         if is_audio:
             # OpenAI chat/file handling for audio is not implemented here
             return jsonify({"description": "OpenAI audio analysis is not supported by this gallery interface."})
@@ -617,13 +605,12 @@ if __name__ == '__main__':
             IMAGE_FOLDER = os.path.abspath(arg)
     else:
         IMAGE_FOLDER = '.'
+    if not os.path.isdir(IMAGE_FOLDER):
+        print(f"Folder not found: {IMAGE_FOLDER}")
+        sys.exit(1)
     print(f"Image folder is {IMAGE_FOLDER}")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            probe.bind(("127.0.0.1", PORT))
-        except OSError:
-            print(f"Port {PORT} unavailable. Another instance might be running.")
-            sys.exit(1)
+    if not nethost.port_free(PORT, "127.0.0.1"):
+        print(f"Port {PORT} unavailable. Another instance might be running.")
+        sys.exit(1)
 #    webbrowser.open(f"{host}:{port}")
     app.run(debug=True, port=PORT)
