@@ -51,7 +51,7 @@ export OPENAI_API_KEY=<my API key>
 
 * Sign up for a [GOOGLE_API_KEY](https://aistudio.google.com)
 * `pip install -q -U google-generativeai`
-* `export GENAI_KEY=<YOUR API_KEY>`
+* `export GEMINI_API_KEY=<YOUR API_KEY>`
 
 ## Local LLAVA server
 

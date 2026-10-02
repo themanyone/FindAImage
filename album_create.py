@@ -57,8 +57,10 @@ if len(models) == 0:
     print(nethost.hint())
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
-# Your Gemini API key (export GENAI_TOKEN or GENAI_KEY)
-GEMINI_API_KEY = os.environ.get("GENAI_TOKEN") or os.environ.get("GENAI_KEY")
+# Your Gemini API key (export GEMINI_API_KEY; GENAI_TOKEN/GENAI_KEY still work)
+GEMINI_API_KEY = (os.environ.get("GEMINI_API_KEY")
+                  or os.environ.get("GENAI_TOKEN")
+                  or os.environ.get("GENAI_KEY"))
 genai.configure(api_key=GEMINI_API_KEY)
 # Configure OpenAI
 gpt_key = os.getenv("OPENAI_API_KEY")
