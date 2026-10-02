@@ -27,13 +27,13 @@ lclient = OpenAI(base_url=BASE_URL, api_key="sk-xxx")
 # Since router endpoints do not provide tag info (yet?).
 # Update models.csv with update_models.py, or add your own.
 from look_up_model import get_caps
-unfiltered = [model.id for model in lclient.models.list()]
 
 # Initialize list of eligible models and dictionary for tags
 models = []
 model_tags = {}
 
 try:
+    unfiltered = [model.id for model in lclient.models.list()]
     for model in unfiltered:
         if model == "default":
             continue

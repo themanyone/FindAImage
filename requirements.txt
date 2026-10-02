@@ -10,4 +10,4 @@ soundfile>=0.13.1
 requests>=2.32.5
 huggingface_hub>=1.33.0
 hf>=1.33.0
-hf-gradio>=0.4.1
+hf-gradio>=0.4.1flask
