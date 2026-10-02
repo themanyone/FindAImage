@@ -582,8 +582,7 @@ def describe_image(filename):
                         },
                         {"type": "text", "text": prompt}
                     ]}
-                ], stream=False,
-                stop=["<|im_end|>", "###"]
+                ], stream=False
             )
             return jsonify({"description": response.choices[0].message.content})
         else:
@@ -603,8 +602,7 @@ def describe_image(filename):
                             },
                             {"type": "text", "text": prompt},
                         ]}
-                ], stream=False,
-                stop=["<|im_end|>", "###"]
+                ], stream=False
             )
             return jsonify({"description": response.choices[0].message.content})
     elif app.model.lower() == 'openai':
