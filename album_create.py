@@ -8,6 +8,8 @@ import io
 import os
 import sys
 import base64
+import socket
+from urllib.parse import urlparse
 from PIL import Image
 from flask import Flask, send_from_directory, render_template_string, jsonify
 import google.generativeai as genai
@@ -20,7 +22,18 @@ IMAGE_FOLDER="."
 app.model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp router endpoint
 # See https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
-BASE_URL = "http://localhost:8087/v1"
+BASE_URL = os.environ.get("LLAVA_ENDPOINT", "http://localhost:8087/v1")
+LLAMA_PORT = urlparse(BASE_URL).port or 8087
+LLAMA_HINT = """
+No model server found at {BASE_URL}.
+Start llama-server with a multimodal model on the port matching that endpoint, e.g.:
+  llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port {LLAMA_PORT} -n 200 -a "Qwen2.5-vision"
+The -a flag names the model's capabilities ("vision", "audio", or "omni").
+To point these apps at another server, export LLAVA_ENDPOINT="http://localhost:PORT/v1"
+""".format(BASE_URL=BASE_URL, LLAMA_PORT=LLAMA_PORT)
+if "LLAVA_ENDPOINT" not in os.environ:
+    print(f"Using default model server at {BASE_URL}. "
+          "Export LLAVA_ENDPOINT to change it.")
 lclient = OpenAI(base_url=BASE_URL, api_key="sk-xxx")
 # Get image/audio/video/any-to-any models to populate dropdown
 # We have to get tags with look_up_model.py & models.csv
@@ -49,9 +62,11 @@ try:
             print(f"{tags} \t{model}")
 except Exception as e:
     print(f"\nERROR retrieving model tags: {e}\n")
+    print(LLAMA_HINT)
 
 if len(models) == 0:
     print(f"\nNo image/audio/video models found at {BASE_URL}\n")
+    print(LLAMA_HINT)
 # Google Gemini API endpoint
 GEMINI_API_ENDPOINT = "https://api.gemini.google/v1/text"
 # Your Gemini API key (export GENAI_TOKEN)
@@ -590,6 +605,7 @@ def favicon():
 if __name__ == '__main__':
     HOST = "http://localhost"
     PORT = 9165
+    print("Starting the album_create server. Point your browser here (CTRL+Click):\n")
     print(f"Starting server on {HOST}:{PORT}")
     if len(sys.argv) >= 2:
         arg = os.path.expanduser(sys.argv[1])
@@ -602,5 +618,12 @@ if __name__ == '__main__':
     else:
         IMAGE_FOLDER = '.'
     print(f"Image folder is {IMAGE_FOLDER}")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", PORT))
+        except OSError:
+            print(f"Port {PORT} unavailable. Another instance might be running.")
+            sys.exit(1)
 #    webbrowser.open(f"{host}:{port}")
     app.run(debug=True, port=PORT)

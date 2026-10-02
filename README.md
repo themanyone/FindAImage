@@ -61,7 +61,7 @@ Build [llama.cpp](https://github.com/ggml-org/llama.cpp) according to their inst
 
 ## Start LLAVA Server
 
-If you have more than 4GB VRAM, you can remove -ngl option to offload all layers to GPU. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port.
+If you have more than 4GB VRAM, you can remove -ngl option to offload all layers to GPU. We are using a different port than normal for this dedicated server. Feel free to change it, and modify the chat clients with the new port. Both apps default to `http://localhost:8087/v1`; to use another host or port, export `LLAVA_ENDPOINT="http://localhost:<port>/v1"` (e.g. in `.bashrc`) and they will pick it up automatically.
 
 - Text & image (Download any GGUF. We are using IQ4_NL quantized model, about 3GiB).
 - We use -a "model-alias" with "llava", "vision", "vox" or "omni" to tell our program to use those capabilities.

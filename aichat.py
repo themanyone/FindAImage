@@ -1,22 +1,36 @@
 #!/usr/bin/env python
 """Module: AI Chat Interface
-Description: This module defines the interface and server for an artificial 
-intelligence-powered chat system. It features image and audio queries and a rating 
-system in addition to the usual chat functions. This interface is different in that 
+Description: This module defines the interface and server for an artificial
+intelligence-powered chat system. It features image and audio queries and a rating
+system in addition to the usual chat functions. This interface is different in that
 the resulting chat text is editable. Just click on it a couple times."""
 import html
 import io
 import base64
 import json
 import os
+import sys
 import time
+import socket
 import requests
 from pprint import pprint
 import gradio as gr
 from openai import OpenAI
 import librosa
 import soundfile as sf
-LLAVA_ENDPOINT = "http://localhost:8087/v1"
+from urllib.parse import urlparse
+LLAVA_ENDPOINT = os.environ.get("LLAVA_ENDPOINT", "http://localhost:8087/v1")
+LLAMA_PORT = urlparse(LLAVA_ENDPOINT).port or 8087
+LLAMA_HINT = """
+No model server found at {LLAVA_ENDPOINT}.
+Start llama-server with a multimodal model on the port matching that endpoint, e.g.:
+  llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port {LLAMA_PORT} -n 200 -a "Qwen2.5-vision"
+The -a flag names the model's capabilities ("vision", "audio", or "omni").
+To point these apps at another server, export LLAVA_ENDPOINT="http://localhost:PORT/v1"
+""".format(LLAVA_ENDPOINT=LLAVA_ENDPOINT, LLAMA_PORT=LLAMA_PORT)
+if "LLAVA_ENDPOINT" not in os.environ:
+    print(f"Using default model server at {LLAVA_ENDPOINT}. "
+          "Export LLAVA_ENDPOINT to change it.")
 model_changed = False
 
 LICENSE = """    AI Chat Interface
@@ -46,6 +60,7 @@ try:
         print(f"\nNo models found at {LLAVA_ENDPOINT}\n")
 except Exception as e:
     print(f"\nERROR retrieving models from {LLAVA_ENDPOINT}: {e}\n")
+    print(LLAMA_HINT)
     models = []
 JS = """
 """
@@ -169,7 +184,7 @@ def predict(prompt, history: list):
         # Yield the final assistant message **and** the TPS string
         yield history[-1], tps_str
     except Exception as e:
-        history.append({"role": "assistant", "content": f"Error: {str(e)}".replace('\n', '<br>')})
+        history.append({"role": "assistant", "content": f"Error:{str(e)}".replace('\n', '<br>')})
         yield history[-1], "0 tokens/sec."
     # pprint(history)
 
@@ -188,28 +203,29 @@ def save_votes():
     global votes
     with open("votes.json", "w") as f:
         json.dump(votes, f, indent=2)
-    
+
 def vote(data: gr.LikeData):
     """Module vote:
-    
+
     :param data: gradio like data"""
     load_votes()  # Load existing votes
     model_name = demo.model  # Get current model from demo state
-    
+
     # Initialize model entry if needed
     if model_name not in votes:
         votes[model_name] = {"up": 0, "down": 0}
-    
+
     # Update counts
     if data.liked:
         votes[model_name]["up"] += 1
     else:
         votes[model_name]["down"] += 1
-    
+
     save_votes()  # Persist changes
 
 with gr.Blocks() as demo:
     if len(models) == 0:
+        print(LLAMA_HINT)
         exit(1)
     demo.model = models[0]
     demo.image = None
@@ -217,7 +233,7 @@ with gr.Blocks() as demo:
     tps_box = gr.HTML(html_template = """
         <div style='height: 100%; background: #234; padding: 20px; color: white; text-align: center;'>
         <p>${value}</p>
-        <p>  
+        <p>
             <a style="color: white" href="https://www.paypal.com/donate/?hosted_button_id=A37BWMFG3XXFG">Support further development</a>
         </p><p>
             <a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html">LICENSE</a>
@@ -244,7 +260,7 @@ with gr.Blocks() as demo:
                     "What is the capital of France?",
                     "Who was the first person on the moon?",
                     "Describe this image in 10-50 words.",
-                    "Describe this audio in 10-50 words.",  
+                    "Describe this audio in 10-50 words.",
                     "Reply with transcribed audio."
                 ]
             ).queue()
@@ -305,5 +321,15 @@ with gr.Blocks() as demo:
         )
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS, )
+    PORT = 7860
+    print("Starting the aichat server. Point your browser here (CTRL+Click):\n")
+    print(f"Starting server on http://localhost:{PORT}")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("0.0.0.0", PORT))
+        except OSError:
+            print(f"Port {PORT} unavailable. Another instance might be running.")
+            sys.exit(1)
+    demo.launch(theme=gr.themes.Soft(), js=JS, css=CSS, server_port=PORT)
 
