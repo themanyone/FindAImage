@@ -23,7 +23,9 @@ app.model = 'lorem' # default to lorem ipsum
 # Local llava-llama.cpp router endpoint
 # See https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
 BASE_URL, _ = nethost.endpoint()
-lclient = nethost.get_client(api_key="sk-xxx")
+# Timeout is generous: llama-server in router mode loads models on demand,
+# so the first request for a model can take minutes before generating.
+lclient = nethost.get_client(api_key="sk-xxx", timeout=600)
 AUDIO_EXTS = ('.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.alac', '.aiff', '.opus')
 # Get image/audio/video/any-to-any models to populate dropdown
 # We have to get tags with look_up_model.py & models.csv
@@ -135,13 +137,17 @@ def gallery():
             width:320px;
             display:inline;
             white-space: nowrap;
-            transition: width 0.3s ease, left 0.3s ease;
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
         }
-        figure:hover *:not(.button) {
+        figure:hover {
             white-space: normal;
-            width: 640px;
+            transform: scale(2);
+            transform-origin: top left;
             position: relative;
-            z-index: 10;
+            z-index: 20;
+        }
+        figure:hover img {
+            box-shadow: 0 0 10px #888;
         }
         figcaption {
             position: relative;
@@ -380,6 +386,10 @@ def gallery():
             // Remove help span
             remove(doc.querySelector('span'));
 
+            // Restore default figure visibility so a freshly saved gallery
+            // doesn't reopen with a stale search filter baked in
+            doc.querySelectorAll('figure').forEach(f => f.style.removeProperty('display'));
+
             htmlContent = doc.documentElement.outerHTML;
 
             // Fix quirks mode. Remove /images/ and /media/ portions of tag for portability
@@ -411,7 +421,11 @@ def gallery():
         function filterFigures(event) {
             if (event.key == "Escape") event.target.value = '';
             let searchTerm = (event.target.value || '').trim().toLowerCase();
-            if (searchTerm.length == 0) searchTerm = ' ';
+            if (searchTerm.length == 0) {
+                // Empty search: show everything, including single-word captions
+                figures.forEach(figure => figure.style.display = 'inline-block');
+                return;
+            }
             figures.forEach(figure => {
                 const caption = figure.querySelector('figcaption');
                 if (!caption) {
@@ -426,6 +440,7 @@ def gallery():
 
         function init() {
              let search = document.getElementById('search');
+             search.focus();
              search.addEventListener('keyup', filterFigures, true);
              search.addEventListener('click', (e) => {
                  e.target.select();
@@ -563,48 +578,52 @@ def describe_image(filename):
         return jsonify({"description":
             "Gemini is not configured. Export GEMINI_API_KEY and try again."})
     elif app.model in models:
-        # For audio files, encode raw bytes into input_audio content (base64 + format).
-        if is_audio:
-            with open(file_path, "rb") as f:
-                audio_bytes = f.read()
-            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-            audio_format = filename.rsplit('.', 1)[1].lower()
-            response = lclient.chat.completions.create(
-                model=app.model,
-                messages=[
-                    {"role": "user", "content": [
-                        {
-                            "type": "input_audio",
-                            "input_audio": {
-                                "data": audio_base64,
-                                "format": audio_format
-                            }
-                        },
-                        {"type": "text", "text": prompt}
-                    ]}
-                ], stream=False
-            )
-            return jsonify({"description": response.choices[0].message.content})
-        else:
-            # Image path: keep previous behavior
-            image = Image.open(file_path).resize((250, 250))
-            buffered = io.BytesIO()
-            image.save(buffered, format="PNG")
-            image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-            image_url = f"data:image/png;base64,{image_base64}"
-            response = lclient.chat.completions.create(
-                model=app.model,
-                messages=[
-                   {"role": "user", "content": [
+        try:
+            # For audio files, encode raw bytes into input_audio content (base64 + format).
+            if is_audio:
+                with open(file_path, "rb") as f:
+                    audio_bytes = f.read()
+                audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                audio_format = filename.rsplit('.', 1)[1].lower()
+                response = lclient.chat.completions.create(
+                    model=app.model,
+                    messages=[
+                        {"role": "user", "content": [
                             {
-                                "type": "image_url",
-                                "image_url": {"url": image_url},
+                                "type": "input_audio",
+                                "input_audio": {
+                                    "data": audio_base64,
+                                    "format": audio_format
+                                }
                             },
-                            {"type": "text", "text": prompt},
+                            {"type": "text", "text": prompt}
                         ]}
-                ], stream=False
-            )
+                    ], stream=False
+                )
+            else:
+                # Image path: keep previous behavior
+                image = Image.open(file_path).resize((250, 250))
+                buffered = io.BytesIO()
+                image.save(buffered, format="PNG")
+                image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                image_url = f"data:image/png;base64,{image_base64}"
+                response = lclient.chat.completions.create(
+                    model=app.model,
+                    messages=[
+                       {"role": "user", "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_url},
+                                },
+                                {"type": "text", "text": prompt},
+                            ]}
+                    ], stream=False
+                )
             return jsonify({"description": response.choices[0].message.content})
+        except Exception as e:
+            reason = f"Error querying model {app.model}: {e}"
+            print(reason + nethost.hint(reason))
+            return jsonify({"description": reason + nethost.hint(reason)})
     elif app.model.lower() == 'openai':
         if gpt_key:
             return describe_openai(file_path, prompt, is_audio)

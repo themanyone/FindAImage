@@ -25,12 +25,15 @@ if "LLAVA_ENDPOINT" not in os.environ:
           "Export LLAVA_ENDPOINT to change it.")
 
 
-def hint():
+def hint(reason=None):
     """Module: hint
+    :param reason: optional explanation of what went wrong
     :returns: Message explaining how to start the model server"""
     url, port = endpoint()
+    if reason is None:
+        reason = f"No model server found at {url}."
     return (
-        f"\nNo model server found at {url}.\n"
+        f"\n{reason}\n"
         f"Start llama-server with a multimodal model on the port matching that endpoint, e.g.:\n"
         f"  llama-server -ngl 16 -hf unsloth/Qwen2.5-VL-3B-Instruct-GGUF:IQ4_NL --port {port} -n 200 -a \"Qwen2.5-vision\"\n"
         f"The -a flag names the model's capabilities (\"vision\", \"audio\", or \"omni\").\n"
@@ -51,7 +54,10 @@ def port_free(port, host="0.0.0.0"):
     """Module: port_free
     :param port: TCP port to probe
     :param host: interface to bind on
-    :returns: True when nothing is listening on the port"""
+    :returns: True when nothing is listening on the port, or when the Flask
+        debug reloader handed us the listening socket via WERKZEUG_SERVER_FD"""
+    if os.environ.get("WERKZEUG_SERVER_FD"):
+        return True
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:

@@ -121,19 +121,19 @@ This starts a chat server (yes, yet another server--a web server this time) so, 
 
 ## Photo Album Builder
 
-Test captioning photos in the memes directory. This will launch a server to host the photo album builder. The builder then creates a web page that will be the photo album or media portfolio.
+Test captioning photos in the memes directory. Use the following command to launch the photo album builder.
 
 `./album_create.py memes`
 
-You should see a URL for the photo album builder. `Ctrl+click` it to open it. Or type it into your browser. Monitor memory usage with `nvtop`.
+You should see a URL. `Ctrl+click` it to open it. Or type it into your browser. Monitor memory usage with `nvtop`.
 
 The link might look something like this. `http://localhost:9165`
 
-If there is an existing `index.html` in the image folder, it will import captions from there. If not, it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will display those. (You must install LLavaImageTagger to make that work).
+If there is an existing `index.html` in the image folder, it will import captions from there. If there is no caption it will scan the image metadata for keywords. If the photos were already tagged with keywords using a tool like [LLavaImageTagger](https://github.com/jabberjabberjabber/LLavaImageTagger) it will display those. (Optionally install LLavaImageTagger to make that work).
 
 When Omni model is selected, the photo album builder can also caption audio files!
 
-**Supervise children.** Be aware that these models are under active development. Their output, though usually fine, *may not always be safe* for all ages.
+**Supervise children.** Be aware that these models are under active development. We've never had any problems. But their output *may not always be safe* for all ages.
 
 Once you open the link, and see the browser interface,
 - select a vision model from the drop-down in the upper-left,
@@ -157,7 +157,7 @@ Rename the album to something creative. Launch the album in the default web brow
 
 Create a link to your album on the desktop. While viewing the album, simply drag the link in the address bar to the desktop. Or create a simlink from the command line.
 
-`ln -s album.html ~/Desktop/`
+`ln -srf album.html ~/Desktop/`
 
 Search for text captions in the browser by pressing `CTRL+F`. It will scroll to the image in question. Right click on your mug shots to copy them, paste them to social media, etc. You could also publish the album on a web server, [github pages](https://pages.github.com/), or [google drive](https://dev.to/matinmollapur0101/how-to-use-google-drive-to-host-your-website-1oen). Or good old-fashioned `lftp` to your server box.
 

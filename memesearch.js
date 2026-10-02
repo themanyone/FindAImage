@@ -21,6 +21,7 @@ let figures = document.querySelectorAll('figure');
 
 function init() {
     let search = document.getElementById('search');
+    search.focus();
     search.addEventListener('keyup', filterFigures, true);
     search.addEventListener('click', (e) => {
         e.target.select();
@@ -31,10 +32,13 @@ function init() {
 function filterFigures(event) {
     if (event.key == "Escape") event.target.value = '';
     let searchTerm = event.target.value.trim().toLowerCase();
-    if (searchTerm.length == 0) searchTerm = ' ';
+    if (searchTerm.length == 0) {
+        // Empty search: show everything, including single-word captions
+        figures.forEach(figure => figure.style.display = 'inline-block');
+        return;
+    }
     figures.forEach(figure => {
         if (!figure.querySelector('figcaption')) {
-            console.log(figure.querySelector('img').src);
             figure.style.display = 'inline-block';
         } else
         if (figure.querySelector('figcaption').innerText.toLowerCase()
