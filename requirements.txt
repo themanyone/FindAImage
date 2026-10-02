@@ -2,8 +2,8 @@ google.generativeai>=0.7.2
 openai>=1.48
 pillow>=10.4.0
 beautifulsoup4>=4.12
-gradio_client>=1.3
-gradio>=4.44
+gradio_client>=2.7
+gradio>=6.29
 urllib3>=2.2
 librosa
 soundfile
@@ -11,3 +11,6 @@ html
 json
 base64
 requests
+huggingface_hub>=1.33
+hf>=1.33
+hf-gradio>=0.4

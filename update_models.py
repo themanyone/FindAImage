@@ -16,12 +16,18 @@ def generate_gguf_multimodal_csv(output_file="models.csv"):
     category_data = {}
     models = []
     for tag in categories:
-        models += api.list_models(
-            filter=tag,
-            sort="downloads",
-            direction=-1,
-            limit=5000
-        )
+        try:
+            models += api.list_models(
+                filter=tag,
+                sort="downloads",
+                direction=-1,
+                limit=5000
+            )
+        except TypeError:
+            # Newer huggingface_hub dropped the direction parameter.
+            # Sort ascending by downloads, then reverse to get best first.
+            gets = api.list_models(filter=tag, sort="downloads", limit=5000)
+            models += list(reversed(list(gets)))
 
     # Write to CSV
     with open(output_file, mode="w", newline="") as f:
