@@ -27,6 +27,7 @@ BASE_URL, _ = nethost.endpoint()
 # so the first request for a model can take minutes before generating.
 lclient = nethost.get_client(api_key="sk-xxx", timeout=600)
 AUDIO_EXTS = ('.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.alac', '.aiff', '.opus')
+VIDEO_EXTS = ('.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mpeg', '.mpg')
 # Get image/audio/video/any-to-any models to populate dropdown
 # We have to get tags with look_up_model.py & models.csv
 # Since router endpoints do not provide tag info (yet?).
@@ -82,7 +83,7 @@ def gallery():
     index_path = os.path.join(IMAGE_FOLDER, 'index.html')
     image_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
     audio_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(AUDIO_EXTS)]
-    video_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(('.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.mpeg', '.mpg'))]
+    video_files = [f for f in os.listdir(IMAGE_FOLDER) if f.lower().endswith(VIDEO_EXTS)]
     if os.path.isfile(index_path):
         figures_collection = parse_html(index_path)
     else:
@@ -254,14 +255,15 @@ def gallery():
             //console.log(val);
             fetch('/model/' + val);
             const model_tags = {{ model_tags | tojson }};
-            var showAudioAI = val.includes('lorem') || model_tags[val]?.includes('audio')
-                || model_tags[val]?.includes('any');
-                                  console.log(`${val} ${model_tags[val]}`);
-            const showVisionAI = val.includes('Lorem') || model_tags[val]?.includes('image')
-                || model_tags[val]?.includes('any') || model_tags[val]?.includes('video')
-                                  || typeof model_tags[val] === 'undefined';
-            const showVideoAI = val.includes('Lorem') || model_tags[val]?.includes('video')
-                || model_tags[val]?.includes('any');
+            // Decode the option value back to the real model ID: model_tags is
+            // keyed by raw names, but option values escape ':' as ';' and '/' as ','.
+            const tagKey = val.replace(/;/g, ':').replace(/,/g, '/');
+            const tags = model_tags[tagKey];
+            console.log(`${val} ${tags}`);
+            const showAudioAI = val.includes('lorem') || (tags && (tags.includes('audio') || tags.includes('any')));
+            const showVisionAI = val.includes('Lorem') || !tags || tags.includes('image')
+                || tags.includes('any') || tags.includes('video');
+            const showVideoAI = val.includes('Lorem') || (tags && (tags.includes('video') || tags.includes('any')));
             document.querySelectorAll('.ai-audio').forEach(b => b.style.display = showAudioAI ? 'inline-block' : 'none');
             document.querySelectorAll('.ai-image').forEach(b => b.style.display = showVisionAI ? 'inline-block' : 'none');
             document.querySelectorAll('.ai-video').forEach(b => b.style.display = showVideoAI ? 'inline-block' : 'none');
@@ -570,7 +572,13 @@ def describe_image(filename):
 
     file_path = os.path.join(IMAGE_FOLDER, filename)
     is_audio = filename.lower().endswith(AUDIO_EXTS)
-    prompt = "Describe this audio in 10-50 words." if is_audio else "Describe this image in 10-50 words."
+    is_video = filename.lower().endswith(VIDEO_EXTS)
+    if is_audio:
+        prompt = "Describe this audio in 10-50 words."
+    elif is_video:
+        prompt = "Describe this video in 10-50 words."
+    else:
+        prompt = "Describe this image in 10-50 words."
 
     if app.model.lower() == 'gemini':
         if GEMINI_API_KEY:
@@ -594,6 +602,27 @@ def describe_image(filename):
                                 "input_audio": {
                                     "data": audio_base64,
                                     "format": audio_format
+                                }
+                            },
+                            {"type": "text", "text": prompt}
+                        ]}
+                    ], stream=False
+                )
+            elif is_video:
+                # For video files, send raw bytes as input_video content (base64 + format).
+                with open(file_path, "rb") as f:
+                    video_bytes = f.read()
+                video_base64 = base64.b64encode(video_bytes).decode('utf-8')
+                video_format = filename.rsplit('.', 1)[1].lower()
+                response = lclient.chat.completions.create(
+                    model=app.model,
+                    messages=[
+                        {"role": "user", "content": [
+                            {
+                                "type": "input_video",
+                                "input_video": {
+                                    "data": video_base64,
+                                    "format": video_format
                                 }
                             },
                             {"type": "text", "text": prompt}
